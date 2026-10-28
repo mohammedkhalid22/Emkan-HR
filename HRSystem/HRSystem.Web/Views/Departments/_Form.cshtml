@@ -1,0 +1,45 @@
+@model DepartmentFormViewModel
+
+<div class="page-card" style="max-width: 640px">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" autofocus />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ParentDepartmentId" class="form-label"></label>
+            <select asp-for="ParentDepartmentId" asp-items="Model.ParentDepartments" class="form-select">
+                <option value="">— قسم رئيسي —</option>
+            </select>
+            <span asp-validation-for="ParentDepartmentId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="BranchId" class="form-label"></label>
+            <select asp-for="BranchId" asp-items="Model.Branches" class="form-select">
+                <option value="">— بدون فرع —</option>
+            </select>
+            <span asp-validation-for="BranchId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-4">
+            <label asp-for="ManagerId" class="form-label"></label>
+            <select asp-for="ManagerId" asp-items="Model.Managers" class="form-select">
+                <option value="">— بدون مدير —</option>
+            </select>
+            @if (!Model.Managers.Any())
+            {
+                <div class="form-text">ضيف موظفين الأول من شاشة الموظفين عشان تقدر تختار مدير.</div>
+            }
+            <span asp-validation-for="ManagerId" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a asp-action="Index" class="btn btn-light">إلغاء</a>
+    </form>
+</div>

@@ -1,0 +1,64 @@
+@model AttendanceImportViewModel
+@{
+    ViewData["Title"] = "استيراد البصمة";
+    var valid = Model.Results.Count(r => r.IsValid);
+}
+
+<div class="page-card mb-4">
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label for="file" class="form-label">ملف البصمة (CSV أو Excel)</label>
+            <input type="file" name="file" id="file" accept=".csv,.xlsx" class="form-control" required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-eye"></i> معاينة</button>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="Sample" class="btn btn-outline-secondary w-100"><i class="bi bi-download"></i> ملف نموذجي</a>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">
+        الأعمدة بالترتيب: كود الموظف، التاريخ (yyyy-MM-dd)، وقت الحضور، وقت الانصراف (HH:mm). الصف الأول عناوين.
+        المعاينة مش بتحفظ حاجة. الأيام اللي اتعدلت يدويًا مش بتتغير.
+    </p>
+</div>
+
+@if (Model.Token is not null)
+{
+    <div class="page-card">
+        <div class="page-toolbar">
+            <span>
+                <strong>@Model.FileName</strong>:
+                <span class="text-success">@valid صف سليم</span>
+                @if (Model.Results.Count > valid) { <span class="text-danger">· @(Model.Results.Count - valid) صف فيه مشكلة</span> }
+            </span>
+            @if (valid > 0)
+            {
+                <form asp-action="ConfirmImport" method="post">
+                    <input type="hidden" name="token" value="@Model.Token" />
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> حفظ @valid صف</button>
+                </form>
+            }
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>الصف</th><th>الكود</th><th>الموظف</th><th>التاريخ</th><th>حضور</th><th>انصراف</th><th>النتيجة</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Results)
+                    {
+                        <tr class="@(r.IsValid ? "" : "table-danger")">
+                            <td>@r.RowNumber</td>
+                            <td dir="ltr" class="text-end">@r.Code</td>
+                            <td>@(r.EmployeeName ?? "—")</td>
+                            <td>@(r.Date?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td>@Labels.Time(r.CheckIn)</td>
+                            <td>@Labels.Time(r.CheckOut)</td>
+                            <td class="small">@r.Message</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

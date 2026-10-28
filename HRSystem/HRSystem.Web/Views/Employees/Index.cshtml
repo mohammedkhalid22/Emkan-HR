@@ -1,0 +1,117 @@
+@model EmployeeIndexViewModel
+@{
+    ViewData["Title"] = "الموظفين";
+    var result = Model.Result;
+    var filter = Model.Filter;
+
+    // Keeps the current filters when moving between pages
+    object PageRoute(int page) => new { filter.Search, filter.DepartmentId, filter.Status, Page = page };
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label class="form-label small text-muted" for="Search">بحث</label>
+            <input name="Search" id="Search" value="@filter.Search" class="form-control" placeholder="الاسم أو الكود أو الرقم القومي" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted" for="DepartmentId">القسم</label>
+            <select name="DepartmentId" id="DepartmentId" asp-items="Model.Departments" class="form-select">
+                <option value="">كل الأقسام</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Status">الحالة</label>
+            <select name="Status" id="Status" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var status in Enum.GetValues<EmployeeStatus>())
+                {
+                    <option value="@status" selected="@(filter.Status == status)">@Labels.Of(status)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> بحث</button>
+            <a asp-action="Index" class="btn btn-light">مسح</a>
+        </div>
+    </form>
+
+    <div class="page-toolbar">
+        <span class="text-muted">@result.TotalCount موظف</span>
+        @if (Model.CanEdit)
+        {
+            <div class="d-flex gap-2">
+                <a asp-action="Export" asp-route-Search="@filter.Search" asp-route-DepartmentId="@filter.DepartmentId" asp-route-Status="@filter.Status"
+                   class="btn btn-outline-success"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+                <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة موظف</a>
+            </div>
+        }
+    </div>
+
+    @if (result.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-badge"></i>
+            مفيش موظفين
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>الموظف</th>
+                        <th>الكود</th>
+                        <th>القسم</th>
+                        <th>المسمى</th>
+                        <th>المدير</th>
+                        <th>تاريخ التعيين</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in result.Items)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@e.Id" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
+                                    <partial name="_Avatar" model="(e.Id, e.FullNameAr, e.HasPhoto, 36)" />
+                                    <span class="fw-semibold">@e.FullNameAr</span>
+                                </a>
+                            </td>
+                            <td dir="ltr" class="text-end">@e.Code</td>
+                            <td>@e.DepartmentName</td>
+                            <td>@e.JobTitleName</td>
+                            <td>@(e.ManagerName ?? "—")</td>
+                            <td>@e.HireDate.ToString("yyyy-MM-dd")</td>
+                            <td><span class="badge @Labels.StatusBadge(e.Status)">@Labels.Of(e.Status)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (result.TotalPages > 1)
+        {
+            <nav class="mt-3" aria-label="الصفحات">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item @(result.HasPrevious ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="@ToRoute(PageRoute(result.Page - 1))">السابق</a>
+                    </li>
+                    <li class="page-item disabled"><span class="page-link">صفحة @result.Page من @result.TotalPages</span></li>
+                    <li class="page-item @(result.HasNext ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="@ToRoute(PageRoute(result.Page + 1))">التالي</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@functions {
+    private static Dictionary<string, string> ToRoute(object values)
+        => values.GetType().GetProperties()
+            .Where(p => p.GetValue(values) is not null)
+            .ToDictionary(p => p.Name, p => p.GetValue(values)!.ToString()!);
+}

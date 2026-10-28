@@ -1,0 +1,60 @@
+@model HolidaysViewModel
+@{
+    ViewData["Title"] = "العطلات الرسمية";
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <div class="btn-group" role="group" aria-label="السنة">
+            <a asp-action="Index" asp-route-year="@(Model.Year + 1)" class="btn btn-outline-secondary" title="السنة الجاية"><i class="bi bi-chevron-right"></i></a>
+            <span class="btn btn-outline-secondary disabled fw-bold">@Model.Year</span>
+            <a asp-action="Index" asp-route-year="@(Model.Year - 1)" class="btn btn-outline-secondary" title="السنة اللي فاتت"><i class="bi bi-chevron-left"></i></a>
+        </div>
+        <span class="text-muted">@Model.Holidays.Count عطلة</span>
+    </div>
+
+    <form asp-action="Create" method="post" class="row g-2 align-items-end mb-4">
+        <div class="col-md-3">
+            <label asp-for="NewHoliday.Date" class="form-label small"></label>
+            <input asp-for="NewHoliday.Date" type="date" class="form-control" required />
+        </div>
+        <div class="col-md-5">
+            <label asp-for="NewHoliday.Name" class="form-label small"></label>
+            <input asp-for="NewHoliday.Name" class="form-control" required maxlength="100" />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> إضافة</button>
+        </div>
+    </form>
+
+    @if (Model.Holidays.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-calendar-x"></i> مفيش عطلات متسجلة لسنة @Model.Year</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>التاريخ</th><th>اليوم</th><th>العطلة</th><th class="text-end">إجراءات</th></tr></thead>
+                <tbody>
+                    @foreach (var h in Model.Holidays)
+                    {
+                        <tr>
+                            <td>@h.Date.ToString("yyyy-MM-dd")</td>
+                            <td>@h.Date.ToString("dddd", new System.Globalization.CultureInfo("ar-EG"))</td>
+                            <td class="fw-semibold">@h.Name</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Edit" asp-route-id="@h.Id" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                        data-delete-url="@Url.Action("Delete", new { id = h.Id, year = Model.Year })" data-delete-name="@h.Name">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <p class="small text-muted mt-3 mb-0">أيام العطلات مش بتتحسب من أيام الإجازة.</p>
+</div>

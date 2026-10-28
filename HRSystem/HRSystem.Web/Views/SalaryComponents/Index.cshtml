@@ -1,0 +1,34 @@
+@model List<SalaryComponentDto>
+@{
+    ViewData["Title"] = "مكونات المرتب";
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Count مكوّن</span>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة مكوّن</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>المكوّن</th><th>النوع</th><th>الحساب</th><th>ضريبة</th><th>الموظفين</th><th class="text-end">إجراءات</th></tr></thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@c.Name</td>
+                        <td><span class="badge @(c.Type == SalaryComponentType.Allowance ? "text-bg-success" : "text-bg-danger")">@Labels.Of(c.Type)</span></td>
+                        <td>@Labels.Of(c.CalcMethod)</td>
+                        <td>@(c.IsTaxable ? "خاضع" : "معفي")</td>
+                        <td>@c.EmployeesCount</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                    data-delete-url="@Url.Action("Delete", new { id = c.Id })" data-delete-name="@c.Name"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-3 mb-0">المكوّن بيتعرف هنا مرة واحدة، وقيمته لكل موظف بتتحدد من ملف الموظف (تاب المرتب).</p>
+</div>

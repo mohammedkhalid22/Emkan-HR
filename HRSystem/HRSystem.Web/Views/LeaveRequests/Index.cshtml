@@ -1,0 +1,56 @@
+@model LeaveRequestsIndexViewModel
+@{
+    ViewData["Title"] = "كل طلبات الإجازات";
+    var f = Model.Filter;
+    var result = Model.Result;
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Year">السنة</label>
+            <input type="number" name="Year" id="Year" value="@f.Year" class="form-control" min="2000" max="2100" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted" for="Search">بحث</label>
+            <input name="Search" id="Search" value="@f.Search" class="form-control" placeholder="الاسم أو الكود" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="DepartmentId">القسم</label>
+            <select name="DepartmentId" id="DepartmentId" asp-items="Model.Departments" class="form-select"><option value="">الكل</option></select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Status">الحالة</label>
+            <select name="Status" id="Status" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var s in Enum.GetValues<RequestStatus>())
+                {
+                    <option value="@s" selected="@(f.Status == s)">@Labels.Of(s)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> عرض</button>
+            <a asp-action="Index" class="btn btn-light">مسح</a>
+        </div>
+    </form>
+
+    <div class="page-toolbar"><span class="text-muted">@result.TotalCount طلب</span></div>
+
+    <partial name="_RequestsTable" model="(result.Items, true)" />
+
+    @if (result.TotalPages > 1)
+    {
+        <nav class="mt-3" aria-label="الصفحات">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item @(result.HasPrevious ? "" : "disabled")">
+                    <a class="page-link" asp-route-Year="@f.Year" asp-route-Search="@f.Search" asp-route-DepartmentId="@f.DepartmentId" asp-route-Status="@f.Status" asp-route-Page="@(result.Page - 1)">السابق</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">صفحة @result.Page من @result.TotalPages</span></li>
+                <li class="page-item @(result.HasNext ? "" : "disabled")">
+                    <a class="page-link" asp-route-Year="@f.Year" asp-route-Search="@f.Search" asp-route-DepartmentId="@f.DepartmentId" asp-route-Status="@f.Status" asp-route-Page="@(result.Page + 1)">التالي</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

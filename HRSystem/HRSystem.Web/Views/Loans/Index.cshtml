@@ -1,0 +1,70 @@
+@model LoansViewModel
+@{
+    ViewData["Title"] = "السلف";
+}
+
+<div class="page-card mb-4">
+    <h2 class="h6 fw-bold mb-3">سلفة جديدة</h2>
+    <form asp-action="Create" method="post" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label asp-for="NewLoan.EmployeeId" class="form-label small"></label>
+            <select asp-for="NewLoan.EmployeeId" asp-items="Model.Employees" class="form-select" required><option value="">— اختار —</option></select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewLoan.Amount" class="form-label small"></label>
+            <input asp-for="NewLoan.Amount" type="number" min="1" step="0.01" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewLoan.InstallmentsCount" class="form-label small"></label>
+            <input asp-for="NewLoan.InstallmentsCount" type="number" min="1" max="60" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewLoan.StartMonth" class="form-label small"></label>
+            <input asp-for="NewLoan.StartMonth" type="date" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> تسجيل</button>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">القسط = المبلغ ÷ عدد الأقساط، وبيتخصم من مرتب الشهر اللي اخترته واللي بعده. الموظف ليه سلفة واحدة سارية بس.</p>
+</div>
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Loans.Count سلفة</span>
+        <a asp-action="Index" asp-route-all="@(!Model.ShowAll)" class="btn btn-sm btn-light">@(Model.ShowAll ? "السارية بس" : "عرض الكل")</a>
+    </div>
+    @if (Model.Loans.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-wallet2"></i> مفيش سلف</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>الموظف</th><th>المبلغ</th><th>الأقساط</th><th>القسط</th><th>من شهر</th><th>المتبقي</th><th>الحالة</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var l in Model.Loans)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@l.EmployeeName</td>
+                            <td>@Labels.Money(l.Amount)</td>
+                            <td>@l.InstallmentsCount</td>
+                            <td>@Labels.Money(l.MonthlyInstallment)</td>
+                            <td>@Labels.Month(l.StartMonth.Year, l.StartMonth.Month)</td>
+                            <td class="fw-bold">@Labels.Money(l.RemainingAmount)</td>
+                            <td><span class="badge @(l.Status == LoanStatus.Active ? "text-bg-info" : "text-bg-secondary")">@Labels.Of(l.Status)</span></td>
+                            <td class="text-end">
+                                @if (l.CanCancel)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-delete-url="@Url.Action("Cancel", new { id = l.Id })"
+                                            data-delete-name="سلفة @l.EmployeeName"><i class="bi bi-x-lg"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,134 @@
+@model AttendanceIndexViewModel
+@{
+    ViewData["Title"] = Model.ShowEmployee ? "سجل الحضور" : "حضوري";
+    var f = Model.Filter;
+    var result = Model.Result;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+@if (Model.Today is not null)
+{
+    <partial name="_CheckInCard" model="Model.Today" />
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="From">من</label>
+            <input type="date" name="From" id="From" value="@f.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="To">إلى</label>
+            <input type="date" name="To" id="To" value="@f.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        @if (Model.ShowEmployee)
+        {
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="Search">بحث</label>
+                <input name="Search" id="Search" value="@f.Search" class="form-control" placeholder="الاسم أو الكود" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted" for="DepartmentId">القسم</label>
+                <select name="DepartmentId" id="DepartmentId" asp-items="Model.Departments" class="form-select"><option value="">الكل</option></select>
+            </div>
+        }
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Status">الحالة</label>
+            <select name="Status" id="Status" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var s in Enum.GetValues<AttendanceStatus>())
+                {
+                    <option value="@s" selected="@(f.Status == s)">@Labels.Of(s)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> عرض</button>
+        </div>
+    </form>
+
+    <div class="page-toolbar">
+        <span class="text-muted">@result.TotalCount تسجيل</span>
+        @if (Model.CanEdit)
+        {
+            <form asp-action="CloseDays" method="post" class="d-flex gap-2 align-items-center">
+                <input type="hidden" name="from" value="@f.From?.ToString("yyyy-MM-dd")" />
+                <input type="hidden" name="to" value="@f.To?.ToString("yyyy-MM-dd")" />
+                <button type="submit" class="btn btn-outline-secondary btn-sm" title="يسجل الغياب والإجازات والعطلات للأيام اللي فاتت في الفترة دي">
+                    <i class="bi bi-calendar-check"></i> إقفال الأيام
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (result.Items.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-clock-history"></i> مفيش تسجيلات في الفترة دي</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        @if (Model.ShowEmployee) { <th>الموظف</th> }
+                        <th>التاريخ</th>
+                        <th>الحالة</th>
+                        <th>حضور</th>
+                        <th>انصراف</th>
+                        <th>تأخير</th>
+                        <th>انصراف مبكر</th>
+                        <th>أوفر تايم</th>
+                        <th>المصدر</th>
+                        @if (Model.CanEdit) { <th class="text-end">تعديل</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in result.Items)
+                    {
+                        <tr>
+                            @if (Model.ShowEmployee)
+                            {
+                                <td><span class="fw-semibold">@r.EmployeeName</span><div class="small text-muted">@r.DepartmentName</div></td>
+                            }
+                            <td class="text-nowrap">@r.Date.ToString("yyyy-MM-dd")</td>
+                            <td><span class="badge @Labels.StatusBadge(r.Status)">@Labels.Of(r.Status)</span></td>
+                            <td>@Labels.Time(r.CheckIn)</td>
+                            <td>@Labels.Time(r.CheckOut)</td>
+                            <td class="@(r.LateMinutes > 0 ? "text-danger fw-semibold" : "")">@Labels.Minutes(r.LateMinutes)</td>
+                            <td class="@(r.EarlyLeaveMinutes > 0 ? "text-danger" : "")">@Labels.Minutes(r.EarlyLeaveMinutes)</td>
+                            <td class="@(r.OvertimeMinutes > 0 ? "text-success fw-semibold" : "")">@Labels.Minutes(r.OvertimeMinutes)</td>
+                            <td class="small text-muted" title="@r.Notes">@Labels.Of(r.Source)@(r.Notes is null ? "" : " *")</td>
+                            @if (Model.CanEdit)
+                            {
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-employeeId="@r.EmployeeId" asp-route-date="@r.Date.ToString("yyyy-MM-dd")" asp-route-returnUrl="@returnUrl"
+                                       class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (result.TotalPages > 1)
+        {
+            <nav class="mt-3" aria-label="الصفحات">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item @(result.HasPrevious ? "" : "disabled")">
+                        <a class="page-link" asp-route-From="@f.From?.ToString("yyyy-MM-dd")" asp-route-To="@f.To?.ToString("yyyy-MM-dd")" asp-route-Search="@f.Search" asp-route-DepartmentId="@f.DepartmentId" asp-route-Status="@f.Status" asp-route-Page="@(result.Page - 1)">السابق</a>
+                    </li>
+                    <li class="page-item disabled"><span class="page-link">صفحة @result.Page من @result.TotalPages</span></li>
+                    <li class="page-item @(result.HasNext ? "" : "disabled")">
+                        <a class="page-link" asp-route-From="@f.From?.ToString("yyyy-MM-dd")" asp-route-To="@f.To?.ToString("yyyy-MM-dd")" asp-route-Search="@f.Search" asp-route-DepartmentId="@f.DepartmentId" asp-route-Status="@f.Status" asp-route-Page="@(result.Page + 1)">التالي</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    <p class="small text-muted mt-3 mb-0">
+        الغياب والإجازات والعطلات بتتسجل لوحدها كل كام ساعة للأيام اللي فاتت. التأخير والانصراف المبكر والأوفر تايم بالساعة:الدقيقة.
+        * = متعدل يدويًا (حط الماوس على المصدر عشان تشوف السبب).
+    </p>
+</div>

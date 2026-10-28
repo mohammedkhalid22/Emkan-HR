@@ -1,0 +1,29 @@
+@model SavePublicHolidayDto
+@{
+    ViewData["Title"] = "تعديل عطلة";
+}
+
+<div class="page-card" style="max-width: 640px">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Date" class="form-label"></label>
+            <input asp-for="Date" type="date" class="form-control" />
+            <span asp-validation-for="Date" class="text-danger"></span>
+        </div>
+        <div class="mb-4">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a asp-action="Index" asp-route-year="@Model.Date?.Year" class="btn btn-light">إلغاء</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,40 @@
+@model List<ShiftDto>
+@{
+    ViewData["Title"] = "الورديات";
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Count وردية</span>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة وردية</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>الوردية</th><th>من</th><th>إلى</th><th>السماح</th><th>الموظفين</th><th class="text-end">إجراءات</th></tr></thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@s.Name</td>
+                        <td>@Labels.Time(s.StartTime)</td>
+                        <td>@Labels.Time(s.EndTime)</td>
+                        <td>@s.GraceMinutes دقيقة</td>
+                        <td>@s.EmployeesCount</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                    data-delete-url="@Url.Action("Delete", new { id = s.Id })" data-delete-name="@s.Name">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-3 mb-0">
+        الموظف بيتحدد ورديته من ملفه (تاب الوظيفة). الموظف اللي ملوش وردية بياخد أول وردية هنا.
+        الحضور بعد البداية + فترة السماح بيتحسب تأخير من أول الوردية.
+    </p>
+</div>

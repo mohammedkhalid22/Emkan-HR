@@ -1,0 +1,60 @@
+@model List<PayrollRunDto>
+@{
+    ViewData["Title"] = "مسيرات المرتبات";
+    var today = DateTime.Today;
+}
+
+<div class="page-card mb-4">
+    <h2 class="h6 fw-bold mb-3">حساب مرتبات شهر</h2>
+    <form asp-action="Calculate" method="post" class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label small" for="month">الشهر</label>
+            <select name="month" id="month" class="form-select">
+                @for (var m = 1; m <= 12; m++)
+                {
+                    <option value="@m" selected="@(m == today.Month)">@Labels.Month(m)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small" for="year">السنة</label>
+            <input type="number" name="year" id="year" value="@today.Year" class="form-control" min="2000" max="2100" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calculator"></i> احسب</button>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">
+        الحساب بيعمل مسودة تقدر تراجعها وتعيد حسابها أي عدد مرات. قبل الحساب ضيف المكافآت والجزاءات والسلف.
+        بعد الاعتماد الشهر بيتقفل وأقساط السلف بتتخصم.
+    </p>
+</div>
+
+<div class="page-card">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-cash-stack"></i> لسه مفيش مسيرات</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>الشهر</th><th>الحالة</th><th>الموظفين</th><th>إجمالي المرتبات</th><th>إجمالي الصافي</th><th>تأمينات الشركة</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@Labels.Month(r.Year, r.Month)</td>
+                            <td><span class="badge @(r.Status == PayrollRunStatus.Approved ? "text-bg-success" : "text-bg-warning")">@Labels.Of(r.Status)</span></td>
+                            <td>@r.EmployeesCount</td>
+                            <td>@Labels.Money(r.TotalGross)</td>
+                            <td class="fw-bold">@Labels.Money(r.TotalNet)</td>
+                            <td>@Labels.Money(r.TotalInsuranceCompany)</td>
+                            <td class="text-end"><a asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">فتح</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

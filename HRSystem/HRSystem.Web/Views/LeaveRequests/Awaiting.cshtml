@@ -1,0 +1,17 @@
+@model AwaitingViewModel
+@{
+    ViewData["Title"] = "طلبات بانتظار موافقتي";
+}
+
+<div class="page-card mb-4">
+    <h2 class="h6 fw-bold mb-1">طلبات الإجازات <span class="badge text-bg-light">@Model.Leaves.Count</span></h2>
+    <p class="text-muted small">
+        المدير بيوافق الأول على طلبات فريقه، وبعدين شؤون العاملين بتعتمد. الرصيد بيتخصم بعد الاعتماد النهائي بس.
+    </p>
+    <partial name="_RequestsTable" model="(Model.Leaves, true)" />
+</div>
+
+<div class="page-card">
+    <h2 class="h6 fw-bold mb-3">الأذونات والمأموريات <span class="badge text-bg-light">@Model.AttendanceRequests.Count</span></h2>
+    <partial name="~/Views/AttendanceRequests/_Table.cshtml" model="(Model.AttendanceRequests, true)" />
+</div>

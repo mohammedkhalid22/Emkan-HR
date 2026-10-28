@@ -1,0 +1,25 @@
+@model List<MyBalanceDto>
+
+<div class="row g-3 mb-4">
+    @foreach (var b in Model)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <div class="page-card h-100">
+                <div class="text-muted small mb-1">@b.LeaveTypeName</div>
+                @if (b.IsLimited)
+                {
+                    <div class="stat-value">@Labels.Days(b.Available) <span class="fs-6 fw-normal text-muted">يوم متاح</span></div>
+                    <div class="small text-muted mt-1">
+                        من @Labels.Days(b.Entitled) · مستخدم @Labels.Days(b.Used)
+                        @if (b.Pending > 0) { <span>· معلق @Labels.Days(b.Pending)</span> }
+                    </div>
+                }
+                else
+                {
+                    <div class="stat-value">@Labels.Days(b.Used) <span class="fs-6 fw-normal text-muted">يوم مأخوذ</span></div>
+                    <div class="small text-muted mt-1">بدون رصيد محدد</div>
+                }
+            </div>
+        </div>
+    }
+</div>

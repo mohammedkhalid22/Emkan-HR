@@ -1,0 +1,70 @@
+@model PayrollRunDetailsDto
+@{
+    var run = Model.Run;
+    ViewData["Title"] = $"مرتبات {Labels.Month(run.Year, run.Month)}";
+    var isDraft = run.Status == PayrollRunStatus.Draft;
+}
+
+<div class="page-card mb-4">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="flex-grow-1">
+            <span class="badge @(isDraft ? "text-bg-warning" : "text-bg-success") fs-6">@Labels.Of(run.Status)</span>
+            <span class="text-muted ms-2">@run.EmployeesCount موظف · إجمالي @Labels.Money(run.TotalGross) · صافي <strong>@Labels.Money(run.TotalNet)</strong> جنيه</span>
+            @if (run.ApprovedAt is DateTime at) { <div class="small text-muted mt-1">اتعتمد @at.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div> }
+        </div>
+        <a asp-action="Register" asp-route-id="@run.Id" class="btn btn-outline-success"><i class="bi bi-file-earmark-excel"></i> المسير Excel</a>
+        <a asp-action="BankFile" asp-route-id="@run.Id" class="btn btn-outline-success"><i class="bi bi-bank"></i> ملف البنك</a>
+        @if (isDraft)
+        {
+            <form asp-action="Calculate" method="post">
+                <input type="hidden" name="year" value="@run.Year" />
+                <input type="hidden" name="month" value="@run.Month" />
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> إعادة الحساب</button>
+            </form>
+            <form asp-action="Approve" asp-route-id="@run.Id" method="post"
+                  onsubmit="return confirm('بعد الاعتماد مينفعش تعدل مرتبات الشهر ده. متأكد؟')">
+                <button type="submit" class="btn btn-success"><i class="bi bi-lock"></i> اعتماد</button>
+            </form>
+            <button type="button" class="btn btn-outline-danger" data-delete-url="@Url.Action("Delete", new { id = run.Id })"
+                    data-delete-name="مسودة @Labels.Month(run.Year, run.Month)"><i class="bi bi-trash"></i></button>
+        }
+    </div>
+</div>
+
+<div class="page-card">
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0 payroll-table">
+            <thead>
+                <tr>
+                    <th>الموظف</th><th>أيام</th><th>الأساسي</th><th>بدلات</th><th>أوفر تايم</th><th>مكافآت</th>
+                    <th>الإجمالي</th><th>تأمينات</th><th>ضريبة</th><th>غياب</th><th>تأخير</th><th>جزاءات</th><th>سلفة</th><th>أخرى</th>
+                    <th>الصافي</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td class="text-nowrap"><span class="fw-semibold">@i.EmployeeName</span><div class="small text-muted">@i.DepartmentName</div></td>
+                        <td>@i.SalaryDays</td>
+                        <td>@Labels.Money(i.BasicSalary)</td>
+                        <td>@Labels.Money(i.TotalAllowances)</td>
+                        <td title="@i.OvertimeMinutes دقيقة">@Labels.Money(i.OvertimeAmount)</td>
+                        <td>@Labels.Money(i.Bonuses)</td>
+                        <td class="fw-semibold">@Labels.Money(i.GrossSalary)</td>
+                        <td>@Labels.Money(i.InsuranceEmployee)</td>
+                        <td>@Labels.Money(i.IncomeTax)</td>
+                        <td title="@i.AbsentDays.ToString("0.#") يوم">@Labels.Money(i.AbsenceDeduction)</td>
+                        <td title="@i.LateMinutes دقيقة">@Labels.Money(i.LateDeduction)</td>
+                        <td>@Labels.Money(i.Penalties)</td>
+                        <td>@Labels.Money(i.LoanInstallment)</td>
+                        <td>@Labels.Money(i.OtherDeductions)</td>
+                        <td class="fw-bold @(i.NetSalary < 0 ? "text-danger" : "")">@Labels.Money(i.NetSalary)</td>
+                        <td><a asp-controller="Payslips" asp-action="Download" asp-route-id="@i.Id" class="btn btn-sm btn-outline-secondary" title="كشف المرتب PDF"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-3 mb-0">حط الماوس على الغياب أو التأخير أو الأوفر تايم عشان تشوف عدد الأيام أو الدقايق. صافي بالأحمر = الاستقطاعات أكبر من الإجمالي.</p>
+</div>

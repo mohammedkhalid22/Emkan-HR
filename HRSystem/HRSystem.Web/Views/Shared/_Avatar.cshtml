@@ -1,0 +1,12 @@
+@model (int Id, string Name, bool HasPhoto, int Size)
+@{
+    var style = $"width:{Model.Size}px;height:{Model.Size}px;font-size:{Model.Size / 2.4:0}px";
+}
+@if (Model.HasPhoto)
+{
+    <img src="@Url.Action("Photo", "Employees", new { id = Model.Id })" alt="" class="avatar" style="@style" />
+}
+else
+{
+    <span class="avatar avatar-initial" style="@style">@(Model.Name.Length > 0 ? Model.Name[..1] : "?")</span>
+}

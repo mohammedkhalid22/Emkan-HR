@@ -1,0 +1,175 @@
+@model EmployeeFormViewModel
+
+<form method="post" enctype="multipart/form-data" id="employeeForm">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+    <div class="page-card">
+        @if (Model.Code is not null)
+        {
+            <p class="text-muted mb-3">كود الموظف: <span dir="ltr" class="fw-semibold">@Model.Code</span></p>
+        }
+
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">
+                    <i class="bi bi-person"></i> البيانات الشخصية
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-job" type="button" role="tab">
+                    <i class="bi bi-briefcase"></i> الوظيفة
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-finance" type="button" role="tab">
+                    <i class="bi bi-cash"></i> البيانات المالية
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            @* ---------- Personal ---------- *@
+            <div class="tab-pane fade show active" id="tab-personal" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="FullNameAr" class="form-label"></label>
+                        <input asp-for="FullNameAr" class="form-control" />
+                        <span asp-validation-for="FullNameAr" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="FullNameEn" class="form-label"></label>
+                        <input asp-for="FullNameEn" class="form-control" dir="ltr" />
+                        <span asp-validation-for="FullNameEn" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="NationalId" class="form-label"></label>
+                        <input asp-for="NationalId" class="form-control" dir="ltr" maxlength="14" inputmode="numeric" />
+                        <div class="form-text">تاريخ الميلاد والنوع بيتملوا لوحدهم من الرقم القومي.</div>
+                        <span asp-validation-for="NationalId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="BirthDate" class="form-label"></label>
+                        <input asp-for="BirthDate" type="date" class="form-control" />
+                        <span asp-validation-for="BirthDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Gender" class="form-label"></label>
+                        <select asp-for="Gender" asp-items="Labels.Options<Gender>(Labels.Of)" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="MaritalStatus" class="form-label"></label>
+                        <select asp-for="MaritalStatus" asp-items="Labels.Options<MaritalStatus>(Labels.Of)" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Phone" class="form-label"></label>
+                        <input asp-for="Phone" class="form-control" dir="ltr" inputmode="tel" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" dir="ltr" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Address" class="form-label"></label>
+                        <input asp-for="Address" class="form-control" />
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Photo" class="form-label"></label>
+                        <input asp-for="Photo" type="file" accept=".jpg,.jpeg,.png" class="form-control" />
+                        <div class="form-text">
+                            JPG أو PNG، أقصى حجم 5 ميجا.
+                            @if (Model.HasPhoto) { <span>اختار صورة جديدة لو عايز تغيرها.</span> }
+                        </div>
+                        <span asp-validation-for="Photo" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- Job ---------- *@
+            <div class="tab-pane fade" id="tab-job" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="DepartmentId" class="form-label"></label>
+                        <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                        <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="JobTitleId" class="form-label"></label>
+                        <select asp-for="JobTitleId" asp-items="Model.JobTitles" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                        <span asp-validation-for="JobTitleId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ManagerId" class="form-label"></label>
+                        <select asp-for="ManagerId" asp-items="Model.Managers" class="form-select">
+                            <option value="">— بدون —</option>
+                        </select>
+                        <span asp-validation-for="ManagerId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ShiftId" class="form-label"></label>
+                        <select asp-for="ShiftId" asp-items="Model.Shifts" class="form-select">
+                            <option value="">— بدون —</option>
+                        </select>
+                        <span asp-validation-for="ShiftId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="HireDate" class="form-label"></label>
+                        <input asp-for="HireDate" type="date" class="form-control" />
+                        <span asp-validation-for="HireDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ContractType" class="form-label"></label>
+                        <select asp-for="ContractType" asp-items="Labels.Options<ContractType>(Labels.Of)" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                        <span asp-validation-for="ContractType" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ContractEndDate" class="form-label"></label>
+                        <input asp-for="ContractEndDate" type="date" class="form-control" />
+                        <div class="form-text">مطلوب للعقد المؤقت.</div>
+                        <span asp-validation-for="ContractEndDate" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- Financial ---------- *@
+            <div class="tab-pane fade" id="tab-finance" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="BasicSalary" class="form-label"></label>
+                        <input asp-for="BasicSalary" type="number" step="0.01" min="0" class="form-control" />
+                        <span asp-validation-for="BasicSalary" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="InsuranceSalary" class="form-label"></label>
+                        <input asp-for="InsuranceSalary" type="number" step="0.01" min="0" class="form-control" />
+                        <div class="form-text">لو سبته فاضي هياخد نفس المرتب الأساسي.</div>
+                        <span asp-validation-for="InsuranceSalary" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="BankAccount" class="form-label"></label>
+                        <input asp-for="BankAccount" class="form-control" dir="ltr" />
+                        <span asp-validation-for="BankAccount" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a asp-action="@(Model.Id == 0 ? "Index" : "Details")" asp-route-id="@(Model.Id == 0 ? null : Model.Id)" class="btn btn-light">إلغاء</a>
+    </div>
+</form>

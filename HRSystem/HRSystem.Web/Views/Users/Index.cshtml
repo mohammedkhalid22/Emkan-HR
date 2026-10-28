@@ -1,0 +1,91 @@
+@model UsersViewModel
+@{
+    ViewData["Title"] = "المستخدمين";
+}
+
+<div class="page-card mb-4">
+    <h2 class="h6 fw-bold mb-3">حساب جديد (من غير ملف موظف)</h2>
+    <form asp-action="Create" method="post" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label asp-for="NewUser.FullName" class="form-label small"></label>
+            <input asp-for="NewUser.FullName" class="form-control" required />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="NewUser.Email" class="form-label small"></label>
+            <input asp-for="NewUser.Email" class="form-control" dir="ltr" required />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewUser.Role" class="form-label small"></label>
+            <select asp-for="NewUser.Role" asp-items="Labels.RoleOptions(Model.NewUser.Role)" class="form-select"></select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewUser.Password" class="form-label small"></label>
+            <input asp-for="NewUser.Password" class="form-control" dir="ltr" minlength="8" autocomplete="new-password" required />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> إنشاء</button>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">لحساب موظف استخدم تاب "حساب الدخول" في ملفه عشان يتربط بيه. الحساب هنا لمدير نظام تاني أو محاسب من برا مثلًا.</p>
+</div>
+
+<div class="page-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الموظف</th><th>الدور</th><th>الحالة</th><th class="text-end">إجراءات</th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    var isMe = u.Id == Model.CurrentUserId;
+                    <tr>
+                        <td class="fw-semibold">@u.FullName @if (isMe) { <span class="badge text-bg-light">انت</span> }</td>
+                        <td dir="ltr" class="text-end small">@u.Email</td>
+                        <td>
+                            @if (u.EmployeeId is int empId) { <a asp-controller="Employees" asp-action="Details" asp-route-id="@empId" dir="ltr">@u.EmployeeCode</a> }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            <form asp-action="ChangeRole" asp-route-id="@u.Id" method="post" class="d-flex gap-1">
+                                <select name="role" asp-items="Labels.RoleOptions(u.Role)" class="form-select form-select-sm" style="width: 140px" aria-label="الدور"></select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" title="حفظ الدور"><i class="bi bi-check-lg"></i></button>
+                            </form>
+                        </td>
+                        <td>
+                            @if (u.IsActive) { <span class="badge text-bg-success">مفعّل</span> } else { <span class="badge text-bg-secondary">موقوف</span> }
+                            @if (u.IsLockedOut) { <span class="badge text-bg-warning">مقفول مؤقتًا</span> }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (u.IsLockedOut)
+                            {
+                                <form asp-action="Unlock" asp-route-id="@u.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="فتح القفل"><i class="bi bi-unlock"></i></button>
+                                </form>
+                            }
+                            @if (!isMe)
+                            {
+                                <form asp-action="SetActive" asp-route-id="@u.Id" method="post" class="d-inline">
+                                    <input type="hidden" name="isActive" value="@(u.IsActive ? "false" : "true")" />
+                                    <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-outline-danger" : "btn-outline-success")" title="@(u.IsActive ? "إيقاف" : "تفعيل")">
+                                        <i class="bi @(u.IsActive ? "bi-person-x" : "bi-person-check")"></i>
+                                    </button>
+                                </form>
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="تغيير كلمة السر"
+                                    data-bs-toggle="collapse" data-bs-target="#pw-@u.Id"><i class="bi bi-key"></i></button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="pw-@u.Id">
+                        <td colspan="6">
+                            <form asp-action="ResetPassword" asp-route-id="@u.Id" method="post" class="d-flex gap-2 justify-content-end">
+                                <input type="password" name="newPassword" class="form-control form-control-sm" style="max-width: 240px" dir="ltr"
+                                       minlength="8" placeholder="كلمة السر الجديدة" autocomplete="new-password" required />
+                                <button type="submit" class="btn btn-sm btn-primary">تغيير</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-3 mb-0">لازم يفضل مدير نظام واحد نشط على الأقل، ومينفعش توقف حسابك أو تشيل صلاحيتك بنفسك.</p>
+</div>

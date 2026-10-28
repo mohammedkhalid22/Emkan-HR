@@ -1,0 +1,51 @@
+@model List<LeaveTypeDto>
+@{
+    ViewData["Title"] = "أنواع الإجازات";
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Count نوع</span>
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة نوع</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>النوع</th>
+                    <th>الرصيد السنوي</th>
+                    <th>رصيد الأقدمية</th>
+                    <th>مدفوعة</th>
+                    <th>مرفق</th>
+                    <th>الطلبات</th>
+                    <th class="text-end">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@t.Name</td>
+                        <td>@(t.AnnualDays == 0 ? "بدون حد" : $"{t.AnnualDays} يوم")</td>
+                        <td>@(t.SeniorAnnualDays is int s ? $"{s} يوم" : "—")</td>
+                        <td>@(t.IsPaid ? "نعم" : "لا")</td>
+                        <td>@(t.RequiresAttachment ? "مطلوب" : "—")</td>
+                        <td>@t.RequestsCount</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                    data-delete-url="@Url.Action("Delete", new { id = t.Id })" data-delete-name="@t.Name">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="small text-muted mt-3 mb-0">
+        الأنواع اللي رصيدها "بدون حد" (زي المرضية وبدون أجر) بتتسجل من غير ما تخصم من رصيد.
+        تغيير الأيام بيطبق على الأرصدة الجديدة بس، والأرصدة الموجودة تتعدل من شاشة الأرصدة.
+    </p>
+</div>

@@ -1,0 +1,65 @@
+@model List<DepartmentDto>
+@{
+    ViewData["Title"] = "الأقسام";
+    var canEdit = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Count قسم</span>
+        @if (canEdit)
+        {
+            <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة قسم</a>
+        }
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-diagram-3"></i>
+            لسه مفيش أقسام
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>القسم</th>
+                        <th>تابع لـ</th>
+                        <th>الفرع</th>
+                        <th>المدير</th>
+                        <th>الموظفين</th>
+                        @if (canEdit) { <th class="text-end">إجراءات</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var department in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@department.Name</td>
+                            <td>@(department.ParentDepartmentName ?? "—")</td>
+                            <td>@(department.BranchName ?? "—")</td>
+                            <td>@(department.ManagerName ?? "—")</td>
+                            <td>@department.EmployeesCount</td>
+                            @if (canEdit)
+                            {
+                                <td class="text-end text-nowrap">
+                                    <a asp-action="Edit" asp-route-id="@department.Id" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                            data-delete-url="@Url.Action("Delete", new { id = department.Id })"
+                                            data-delete-name="@department.Name">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

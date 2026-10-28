@@ -1,0 +1,43 @@
+<partial name="_ValidationScriptsPartial" />
+<script>
+    // Validate fields inside hidden tabs too, then jump to the tab that has the first error
+    $.validator.setDefaults({ ignore: [] });
+
+    function showTabOf(element) {
+        const pane = element && element.closest('.tab-pane');
+        if (!pane) return;
+        const button = document.querySelector(`[data-bs-target="#${pane.id}"]`);
+        bootstrap.Tab.getOrCreateInstance(button).show();
+    }
+
+    $(function () {
+        const form = $('#employeeForm');
+        form.on('invalid-form.validate', function (_, validator) {
+            if (validator.errorList.length) showTabOf(validator.errorList[0].element);
+        });
+
+        // Server-side errors: open the tab of the first one
+        const serverError = document.querySelector('#employeeForm .field-validation-error');
+        if (serverError) showTabOf(serverError);
+
+        // Egyptian national ID → birth date and gender
+        $('#NationalId').on('input', function () {
+            const id = this.value.trim();
+            if (!/^[23]\d{13}$/.test(id)) return;
+
+            const year = (id[0] === '2' ? 1900 : 2000) + parseInt(id.substring(1, 3), 10);
+            const month = id.substring(3, 5), day = id.substring(5, 7);
+            const date = new Date(`${year}-${month}-${day}T00:00:00`);
+            if (isNaN(date) || date.getMonth() + 1 !== parseInt(month, 10)) return;
+
+            $('#BirthDate').val(`${year}-${month}-${day}`);
+            $('#Gender').val(parseInt(id[12], 10) % 2 === 1 ? 'Male' : 'Female');
+        });
+
+        // Insurance salary defaults to the basic salary
+        $('#BasicSalary').on('change', function () {
+            const insurance = $('#InsuranceSalary');
+            if (!insurance.val()) insurance.val(this.value);
+        });
+    });
+</script>

@@ -1,0 +1,98 @@
+@model SettingsViewModel
+@{
+    ViewData["Title"] = "الإعدادات";
+}
+
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    القيم دي مبدئية (نسب التأمينات، شرائح الضريبة، الإعفاء الشخصي). لازم محاسب الشركة يراجعها قبل أول مسير حقيقي، وتتحدث كل سنة.
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="page-card">
+            <h2 class="h6 fw-bold mb-3">إعدادات الحساب</h2>
+            @foreach (var s in Model.Settings)
+            {
+                <form asp-action="Update" method="post" class="row g-2 align-items-center mb-2">
+                    <input type="hidden" name="key" value="@s.Key" />
+                    <label class="col-sm-7 col-form-label small" for="v-@s.Key">@Labels.Setting(s.Key)</label>
+                    <div class="col-sm-5">
+                        <div class="input-group input-group-sm">
+                            <input name="value" id="v-@s.Key" value="@s.Value" class="form-control" dir="ltr" />
+                            <button type="submit" class="btn btn-outline-primary" title="حفظ"><i class="bi bi-check-lg"></i></button>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="page-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h6 fw-bold mb-0">شرائح ضريبة كسب العمل (سنوي)</h2>
+                <div class="btn-group btn-group-sm">
+                    <a asp-action="Index" asp-route-year="@(Model.Year + 1)" class="btn btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+                    <span class="btn btn-outline-secondary disabled fw-bold">@Model.Year</span>
+                    <a asp-action="Index" asp-route-year="@(Model.Year - 1)" class="btn btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+                </div>
+            </div>
+
+            @if (Model.Brackets.Count == 0)
+            {
+                <div class="empty-state py-3">
+                    مفيش شرائح لسنة @Model.Year، فالضريبة هتتحسب صفر.
+                    <form asp-action="CopyYear" method="post" class="mt-2">
+                        <input type="hidden" name="fromYear" value="@(Model.Year - 1)" />
+                        <input type="hidden" name="toYear" value="@Model.Year" />
+                        <button type="submit" class="btn btn-sm btn-outline-primary">انسخ شرائح @(Model.Year - 1)</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>من</th><th>إلى</th><th>النسبة</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model.Brackets)
+                        {
+                            <tr>
+                                <td>@b.FromAmount.ToString("N0")</td>
+                                <td>@(b.ToAmount?.ToString("N0") ?? "وما فوق")</td>
+                                <td>@b.Rate.ToString("0.##")%</td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-delete-url="@Url.Action("DeleteBracket", new { id = b.Id, year = Model.Year })"
+                                            data-delete-name="الشريحة من @b.FromAmount.ToString("N0")"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <form asp-action="AddBracket" method="post" class="row g-2 align-items-end">
+                <input type="hidden" asp-for="NewBracket.Year" />
+                <div class="col-4">
+                    <label asp-for="NewBracket.FromAmount" class="form-label small"></label>
+                    <input asp-for="NewBracket.FromAmount" type="number" min="0" class="form-control form-control-sm" required />
+                </div>
+                <div class="col-4">
+                    <label asp-for="NewBracket.ToAmount" class="form-label small"></label>
+                    <input asp-for="NewBracket.ToAmount" type="number" min="0" class="form-control form-control-sm" placeholder="فاضي = وما فوق" />
+                </div>
+                <div class="col-2">
+                    <label asp-for="NewBracket.Rate" class="form-label small"></label>
+                    <input asp-for="NewBracket.Rate" type="number" min="0" max="100" step="0.5" class="form-control form-control-sm" required />
+                </div>
+                <div class="col-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i></button>
+                </div>
+            </form>
+            <p class="small text-muted mt-3 mb-0">
+                الضريبة الشهرية = ضريبة ((الدخل الخاضع × 12) − الإعفاء) ÷ 12. كل شريحة بتاخد نسبتها من الجزء اللي فيها بس.
+                قواعد إلغاء الشرائح الأولى للدخول العالية مش متطبقة.
+            </p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Files uploaded by users (employee photos, documents, leave attachments, fingerprint imports)
+HRSystem/HRSystem.Web/App_Data/
+
+# Local tool settings
+.claude/
+
+# Personal notes that may hold passwords
+info login.txt

@@ -1,0 +1,66 @@
+@model MonthlyAttendanceViewModel
+@{
+    ViewData["Title"] = "تقرير الحضور الشهري";
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="year">السنة</label>
+            <input type="number" name="year" id="year" value="@Model.Year" class="form-control" min="2000" max="2100" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="month">الشهر</label>
+            <select name="month" id="month" class="form-select">
+                @for (var m = 1; m <= 12; m++)
+                {
+                    <option value="@m" selected="@(m == Model.Month)">@m</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted" for="departmentId">القسم</label>
+            <select name="departmentId" id="departmentId" asp-items="Model.Departments" class="form-select"><option value="">الكل</option></select>
+        </div>
+        <div class="col-md-5 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> عرض</button>
+            <a asp-action="ExportMonthly" asp-route-year="@Model.Year" asp-route-month="@Model.Month" asp-route-departmentId="@Model.DepartmentId"
+               class="btn btn-outline-success"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+        </div>
+    </form>
+
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-table"></i> مفيش موظفين في الفترة دي</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>الموظف</th><th>حضور</th><th>غياب</th><th>إجازة</th><th>مأمورية</th><th>عطلة</th>
+                        <th>تأخير</th><th>انصراف مبكر</th><th>أوفر تايم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td><span class="fw-semibold">@r.EmployeeName</span><div class="small text-muted">@r.DepartmentName</div></td>
+                            <td>@r.PresentDays</td>
+                            <td class="@(r.AbsentDays > 0 ? "text-danger fw-semibold" : "")">@r.AbsentDays</td>
+                            <td>@r.LeaveDays</td>
+                            <td>@r.MissionDays</td>
+                            <td>@r.HolidayDays</td>
+                            <td>@Labels.Minutes(r.LateMinutes)</td>
+                            <td>@Labels.Minutes(r.EarlyLeaveMinutes)</td>
+                            <td>@Labels.Minutes(r.OvertimeMinutes)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <p class="small text-muted mt-3 mb-0">الأرقام دي هي اللي هتدخل في حساب المرتبات في المرحلة الخامسة.</p>
+</div>

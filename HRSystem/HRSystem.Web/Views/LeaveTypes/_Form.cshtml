@@ -1,0 +1,41 @@
+@model SaveLeaveTypeDto
+
+<div class="page-card" style="max-width: 640px">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" autofocus />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+                <label asp-for="AnnualDays" class="form-label"></label>
+                <input asp-for="AnnualDays" type="number" min="0" max="365" class="form-control" />
+                <div class="form-text">0 = بدون رصيد (الطلبات بتتسجل بس).</div>
+                <span asp-validation-for="AnnualDays" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6">
+                <label asp-for="SeniorAnnualDays" class="form-label"></label>
+                <input asp-for="SeniorAnnualDays" type="number" min="0" max="365" class="form-control" />
+                <div class="form-text">سيبه فاضي لو مفيش فرق.</div>
+                <span asp-validation-for="SeniorAnnualDays" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-check mb-2">
+            <input asp-for="IsPaid" class="form-check-input" />
+            <label asp-for="IsPaid" class="form-check-label"></label>
+        </div>
+        <div class="form-check mb-4">
+            <input asp-for="RequiresAttachment" class="form-check-input" />
+            <label asp-for="RequiresAttachment" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a asp-action="Index" class="btn btn-light">إلغاء</a>
+    </form>
+</div>

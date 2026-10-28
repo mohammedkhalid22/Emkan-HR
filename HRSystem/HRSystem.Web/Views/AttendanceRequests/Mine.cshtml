@@ -1,0 +1,42 @@
+@model MyAttendanceRequestsViewModel
+@{
+    ViewData["Title"] = "الأذونات والمأموريات";
+}
+
+<div class="page-card mb-4">
+    <h2 class="h6 fw-bold mb-3">طلب جديد</h2>
+    <form asp-action="Create" method="post" class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label asp-for="NewRequest.Type" class="form-label small"></label>
+            <select asp-for="NewRequest.Type" asp-items="Labels.Options<AttendanceRequestType>(Labels.Of)" class="form-select"></select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewRequest.Date" class="form-label small"></label>
+            <input asp-for="NewRequest.Date" type="date" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewRequest.FromTime" class="form-label small"></label>
+            <input asp-for="NewRequest.FromTime" type="time" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewRequest.ToTime" class="form-label small"></label>
+            <input asp-for="NewRequest.ToTime" type="time" class="form-control" required />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="NewRequest.Reason" class="form-label small"></label>
+            <input asp-for="NewRequest.Reason" class="form-control" required maxlength="500" />
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100" title="إرسال"><i class="bi bi-send"></i></button>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">
+        الإذن أقصاه 4 ساعات، وبيلغي التأخير أو الانصراف المبكر في وقته بعد الموافقة.
+        المأمورية اليوم الكامل بتتسجل "مأمورية" بدل غياب. الموافقة: المدير وبعدين شؤون العاملين.
+    </p>
+</div>
+
+<div class="page-card">
+    <h2 class="h6 fw-bold mb-3">طلباتي</h2>
+    <partial name="_Table" model="(Model.Requests, false)" />
+</div>

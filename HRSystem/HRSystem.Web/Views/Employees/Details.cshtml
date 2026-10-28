@@ -1,0 +1,403 @@
+@model EmployeeProfileViewModel
+@{
+    var e = Model.Employee;
+    ViewData["Title"] = e.FullNameAr;
+    var isTerminated = e.Status == EmployeeStatus.Terminated;
+
+    string Date(DateOnly? d) => d?.ToString("yyyy-MM-dd") ?? "—";
+    string Text(string? s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
+}
+
+@* ---------- Header ---------- *@
+<div class="page-card mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <partial name="_Avatar" model="(e.Id, e.FullNameAr, e.HasPhoto, 72)" />
+        <div class="flex-grow-1">
+            <h2 class="h5 fw-bold mb-1">@e.FullNameAr</h2>
+            <div class="text-muted">
+                @e.JobTitleName · @e.DepartmentName ·
+                <span dir="ltr">@e.Code</span>
+            </div>
+            <span class="badge @Labels.StatusBadge(e.Status) mt-1">@Labels.Of(e.Status)</span>
+        </div>
+        @if (Model.CanEdit)
+        {
+            <div class="d-flex gap-2">
+                <a asp-action="Edit" asp-route-id="@e.Id" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> تعديل</a>
+                @if (!isTerminated)
+                {
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#terminateModal">
+                        <i class="bi bi-person-x"></i> إنهاء خدمة
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    @if (isTerminated)
+    {
+        <div class="alert alert-secondary mt-3 mb-0">
+            خدمة الموظف انتهت بتاريخ @Date(e.TerminationDate). السبب: @e.TerminationReason
+        </div>
+    }
+</div>
+
+@* ---------- Tabs ---------- *@
+<div class="page-card">
+    <ul class="nav nav-tabs mb-4" role="tablist" id="profileTabs">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info" type="button">البيانات</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">المستندات <span class="badge text-bg-light">@e.Documents.Count</span></button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history" type="button">السجل الوظيفي</button></li>
+        @if (Model.Salary is not null)
+        {
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#salary" type="button">المرتب</button></li>
+        }
+        @if (Model.CanManageAccount)
+        {
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#account" type="button">حساب الدخول</button></li>
+        }
+    </ul>
+
+    <div class="tab-content">
+        @* ---------- Info ---------- *@
+        <div class="tab-pane fade show active" id="info">
+            <div class="row g-4">
+                <div class="col-md-6 col-xxl-4">
+                    <h3 class="h6 fw-bold text-muted mb-3">البيانات الشخصية</h3>
+                    <dl class="info-list">
+                        <dt>الاسم بالإنجليزي</dt><dd class="ltr-value">@Text(e.FullNameEn)</dd>
+                        <dt>الرقم القومي</dt><dd class="ltr-value">@e.NationalId</dd>
+                        <dt>تاريخ الميلاد</dt><dd>@Date(e.BirthDate)</dd>
+                        <dt>النوع</dt><dd>@Labels.Of(e.Gender)</dd>
+                        <dt>الحالة الاجتماعية</dt><dd>@(e.MaritalStatus is MaritalStatus m ? Labels.Of(m) : "—")</dd>
+                        <dt>الموبايل</dt><dd class="ltr-value">@Text(e.Phone)</dd>
+                        <dt>البريد</dt><dd class="ltr-value">@Text(e.Email)</dd>
+                        <dt>العنوان</dt><dd>@Text(e.Address)</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6 col-xxl-4">
+                    <h3 class="h6 fw-bold text-muted mb-3">الوظيفة</h3>
+                    <dl class="info-list">
+                        <dt>القسم</dt><dd>@e.DepartmentName</dd>
+                        <dt>المسمى</dt><dd>@e.JobTitleName</dd>
+                        <dt>المدير المباشر</dt>
+                        <dd>
+                            @if (e.ManagerId is int managerId && Model.CanEdit)
+                            {
+                                <a asp-action="Details" asp-route-id="@managerId">@e.ManagerName</a>
+                            }
+                            else { <span>@Text(e.ManagerName)</span> }
+                        </dd>
+                        <dt>الوردية</dt><dd>@Text(e.ShiftName)</dd>
+                        <dt>تاريخ التعيين</dt><dd>@Date(e.HireDate)</dd>
+                        <dt>نوع العقد</dt><dd>@Labels.Of(e.ContractType)</dd>
+                        <dt>انتهاء العقد</dt><dd>@Date(e.ContractEndDate)</dd>
+                    </dl>
+                </div>
+                @if (Model.CanSeeSalary)
+                {
+                    <div class="col-md-6 col-xxl-4">
+                        <h3 class="h6 fw-bold text-muted mb-3">البيانات المالية</h3>
+                        <dl class="info-list">
+                            <dt>المرتب الأساسي</dt><dd>@e.BasicSalary.ToString("N2") جنيه</dd>
+                            <dt>أجر الاشتراك التأميني</dt><dd>@e.InsuranceSalary.ToString("N2") جنيه</dd>
+                            <dt>الحساب البنكي</dt><dd class="ltr-value">@Text(e.BankAccount)</dd>
+                        </dl>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ---------- Documents ---------- *@
+        <div class="tab-pane fade" id="documents">
+            @if (Model.CanEdit)
+            {
+                <form asp-controller="EmployeeDocuments" asp-action="Upload" method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-4">
+                    <input type="hidden" asp-for="NewDocument.EmployeeId" />
+                    <div class="col-md-3">
+                        <label asp-for="NewDocument.DocumentType" class="form-label small"></label>
+                        <select asp-for="NewDocument.DocumentType" class="form-select" required>
+                            <option value="">— اختار —</option>
+                            @foreach (var type in HRSystem.BLL.Services.EmployeeDocumentService.DocumentTypes)
+                            {
+                                <option>@type</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="NewDocument.ExpiryDate" class="form-label small"></label>
+                        <input asp-for="NewDocument.ExpiryDate" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="file" class="form-label small">الملف (PDF أو صورة، أقصى 5 ميجا)</label>
+                        <input type="file" name="file" id="file" accept=".pdf,.jpg,.jpeg,.png" class="form-control" required />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> رفع</button>
+                    </div>
+                </form>
+            }
+
+            @if (e.Documents.Count == 0)
+            {
+                <div class="empty-state"><i class="bi bi-folder2-open"></i> مفيش مستندات</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr><th>النوع</th><th>الملف</th><th>تاريخ الانتهاء</th><th>اترفع في</th><th class="text-end">إجراءات</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in e.Documents)
+                            {
+                                var expired = doc.ExpiryDate is DateOnly exp && exp < DateOnly.FromDateTime(DateTime.Today);
+                                <tr>
+                                    <td class="fw-semibold">@doc.DocumentType</td>
+                                    <td dir="ltr" class="text-end small">@doc.FileName</td>
+                                    <td>
+                                        @Date(doc.ExpiryDate)
+                                        @if (expired) { <span class="badge text-bg-danger">منتهي</span> }
+                                    </td>
+                                    <td>@doc.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                    <td class="text-end text-nowrap">
+                                        <a asp-controller="EmployeeDocuments" asp-action="Download" asp-route-id="@doc.Id" class="btn btn-sm btn-outline-primary" title="تحميل">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        @if (Model.CanEdit)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                                    data-delete-url="@Url.Action("Delete", "EmployeeDocuments", new { id = doc.Id })"
+                                                    data-delete-name="@doc.DocumentType">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        @* ---------- History ---------- *@
+        <div class="tab-pane fade" id="history">
+            @if (e.History.Count == 0)
+            {
+                <div class="empty-state"><i class="bi bi-clock-history"></i> مفيش تغييرات</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead><tr><th>التاريخ</th><th>التغيير</th><th>من</th><th>إلى</th></tr></thead>
+                        <tbody>
+                            @foreach (var h in e.History)
+                            {
+                                <tr>
+                                    <td>@Date(h.EffectiveDate)</td>
+                                    <td class="fw-semibold">@h.ChangeType</td>
+                                    <td>@Text(h.OldValue)</td>
+                                    <td>@Text(h.NewValue)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        @* ---------- Salary (HR) ---------- *@
+        @if (Model.Salary is { } salary)
+        {
+            <div class="tab-pane fade" id="salary">
+                <h3 class="h6 fw-bold mb-3">البدلات والاستقطاعات الثابتة</h3>
+                @if (salary.Components.Count == 0)
+                {
+                    <p class="text-muted">مفيش. المرتب = الأساسي بس.</p>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle" style="max-width: 640px">
+                        <thead><tr><th>المكوّن</th><th>النوع</th><th>القيمة</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var c in salary.Components)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@c.Name</td>
+                                    <td>@Labels.Of(c.Type)</td>
+                                    <td>@(c.CalcMethod == CalculationMethod.Percentage ? $"{c.Value:0.##}% من الأساسي" : $"{c.Value:N2} جنيه")</td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-delete-url="@Url.Action("RemoveFromEmployee", "SalaryComponents", new { id = c.Id })" data-delete-name="@c.Name">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <form asp-controller="SalaryComponents" asp-action="SetForEmployee" method="post" class="row g-2 align-items-end mb-4" style="max-width: 640px">
+                    <input type="hidden" name="employeeId" value="@e.Id" />
+                    <div class="col-6">
+                        <label class="form-label small" for="componentId">المكوّن</label>
+                        <select name="componentId" id="componentId" asp-items="salary.AvailableComponents" class="form-select" required>
+                            <option value="">— اختار —</option>
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small" for="value">القيمة (مبلغ أو %)</label>
+                        <input type="number" name="value" id="value" min="0.01" step="0.01" class="form-control" required />
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary w-100" title="حفظ"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                </form>
+
+                <h3 class="h6 fw-bold mb-3">السلف</h3>
+                @if (salary.Loans.Count == 0)
+                {
+                    <p class="text-muted mb-0">مفيش سلف. <a asp-controller="Loans" asp-action="Index">سجّل سلفة</a></p>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle mb-0" style="max-width: 640px">
+                        <thead><tr><th>المبلغ</th><th>القسط</th><th>من شهر</th><th>المتبقي</th><th>الحالة</th></tr></thead>
+                        <tbody>
+                            @foreach (var l in salary.Loans)
+                            {
+                                <tr>
+                                    <td>@Labels.Money(l.Amount)</td>
+                                    <td>@Labels.Money(l.MonthlyInstallment)</td>
+                                    <td>@Labels.Month(l.StartMonth.Year, l.StartMonth.Month)</td>
+                                    <td class="fw-bold">@Labels.Money(l.RemainingAmount)</td>
+                                    <td>@Labels.Of(l.Status)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+
+        @* ---------- Account (Admin) ---------- *@
+        @if (Model.CanManageAccount)
+        {
+            <div class="tab-pane fade" id="account">
+                @if (Model.Account is { } account)
+                {
+                    <dl class="info-list mb-4" style="max-width: 480px">
+                        <dt>البريد</dt><dd class="ltr-value">@account.Email</dd>
+                        <dt>الدور</dt><dd>@Labels.Role(account.Role)</dd>
+                        <dt>الحالة</dt>
+                        <dd>
+                            @if (account.IsActive) { <span class="badge text-bg-success">مفعّل</span> }
+                            else { <span class="badge text-bg-secondary">موقوف</span> }
+                            @if (account.IsLockedOut) { <span class="badge text-bg-warning">مقفول مؤقتًا</span> }
+                        </dd>
+                    </dl>
+
+                    <div class="row g-3" style="max-width: 900px">
+                        <form asp-controller="EmployeeAccounts" asp-action="ChangeRole" method="post" class="col-md-4">
+                            <input type="hidden" name="employeeId" value="@e.Id" />
+                            <label class="form-label small" for="role">تغيير الدور</label>
+                            <div class="input-group">
+                                <select name="role" id="role" asp-items="Labels.RoleOptions(account.Role)" class="form-select"></select>
+                                <button type="submit" class="btn btn-outline-primary">حفظ</button>
+                            </div>
+                        </form>
+                        <form asp-controller="EmployeeAccounts" asp-action="ResetPassword" method="post" class="col-md-5">
+                            <input type="hidden" name="employeeId" value="@e.Id" />
+                            <label class="form-label small" for="newPassword">كلمة سر جديدة</label>
+                            <div class="input-group">
+                                <input type="password" name="newPassword" id="newPassword" class="form-control" dir="ltr" minlength="8" autocomplete="new-password" />
+                                <button type="submit" class="btn btn-outline-primary">تغيير</button>
+                            </div>
+                        </form>
+                        <form asp-controller="EmployeeAccounts" asp-action="SetActive" method="post" class="col-md-3 d-flex align-items-end">
+                            <input type="hidden" name="employeeId" value="@e.Id" />
+                            <input type="hidden" name="isActive" value="@(account.IsActive ? "false" : "true")" />
+                            @if (account.IsActive)
+                            {
+                                <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-lock"></i> إيقاف الحساب</button>
+                            }
+                            else
+                            {
+                                <button type="submit" class="btn btn-outline-success w-100" disabled="@isTerminated"><i class="bi bi-unlock"></i> تفعيل الحساب</button>
+                            }
+                        </form>
+                    </div>
+                }
+                else if (isTerminated)
+                {
+                    <div class="empty-state"><i class="bi bi-person-lock"></i> مينفعش تعمل حساب لموظف خدمته منتهية</div>
+                }
+                else
+                {
+                    <p class="text-muted">الموظف ماعندوش حساب دخول. اعمله حساب عشان يقدر يدخل يشوف ملفه ويقدم طلباته.</p>
+                    <form asp-controller="EmployeeAccounts" asp-action="Create" method="post" class="row g-3" style="max-width: 900px">
+                        <input type="hidden" asp-for="NewAccount.EmployeeId" />
+                        <div class="col-md-4">
+                            <label asp-for="NewAccount.Email" class="form-label small"></label>
+                            <input asp-for="NewAccount.Email" class="form-control" dir="ltr" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NewAccount.Role" class="form-label small"></label>
+                            <select asp-for="NewAccount.Role" asp-items="Labels.RoleOptions(Model.NewAccount.Role)" class="form-select"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NewAccount.Password" class="form-label small"></label>
+                            <input asp-for="NewAccount.Password" class="form-control" dir="ltr" minlength="8" autocomplete="new-password" required />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> إنشاء</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@* ---------- Terminate dialog ---------- *@
+@if (Model.CanEdit && !isTerminated)
+{
+    <div class="modal fade" id="terminateModal" tabindex="-1" aria-labelledby="terminateLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="Terminate" method="post" class="modal-content">
+                <input type="hidden" asp-for="Terminate.EmployeeId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="terminateLabel">إنهاء خدمة @e.FullNameAr</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label asp-for="Terminate.TerminationDate" class="form-label"></label>
+                        <input asp-for="Terminate.TerminationDate" type="date" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Terminate.Reason" class="form-label"></label>
+                        <textarea asp-for="Terminate.Reason" class="form-control" rows="2" required maxlength="250"></textarea>
+                    </div>
+                    <p class="small text-muted mb-0">حساب الدخول بتاعه هيتقفل، ولو هو مدير قسم القسم هيبقى من غير مدير.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">إنهاء الخدمة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Open the tab named in the URL (#documents, #account) after an upload or account change
+        const hash = window.location.hash;
+        const tab = hash && document.querySelector(`#profileTabs [data-bs-target="${hash}"]`);
+        if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+    </script>
+}

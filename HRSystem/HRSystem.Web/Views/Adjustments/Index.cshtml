@@ -1,0 +1,78 @@
+@model AdjustmentsViewModel
+@{
+    ViewData["Title"] = "المكافآت والجزاءات";
+}
+
+<div class="page-card mb-4">
+    <form method="get" class="row g-2 align-items-end mb-4">
+        <div class="col-md-2">
+            <label class="form-label small" for="month">الشهر</label>
+            <select name="month" id="month" class="form-select" onchange="this.form.submit()">
+                @for (var m = 1; m <= 12; m++) { <option value="@m" selected="@(m == Model.Month)">@Labels.Month(m)</option> }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small" for="year">السنة</label>
+            <input type="number" name="year" id="year" value="@Model.Year" class="form-control" onchange="this.form.submit()" />
+        </div>
+    </form>
+
+    <h2 class="h6 fw-bold mb-3">إضافة لشهر @Labels.Month(Model.Year, Model.Month)</h2>
+    <form asp-action="Create" method="post" class="row g-2 align-items-end">
+        <input type="hidden" asp-for="NewAdjustment.Year" />
+        <input type="hidden" asp-for="NewAdjustment.Month" />
+        <div class="col-md-3">
+            <label asp-for="NewAdjustment.EmployeeId" class="form-label small"></label>
+            <select asp-for="NewAdjustment.EmployeeId" asp-items="Model.Employees" class="form-select" required><option value="">— اختار —</option></select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewAdjustment.Type" class="form-label small"></label>
+            <select asp-for="NewAdjustment.Type" asp-items="Labels.Options<AdjustmentType>(Labels.Of)" class="form-select"></select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="NewAdjustment.Amount" class="form-label small"></label>
+            <input asp-for="NewAdjustment.Amount" type="number" min="0" step="0.01" class="form-control" />
+        </div>
+        <div class="col-md-1">
+            <label asp-for="NewAdjustment.Days" class="form-label small"></label>
+            <input asp-for="NewAdjustment.Days" type="number" min="0" max="30" step="0.5" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="NewAdjustment.Reason" class="form-label small"></label>
+            <input asp-for="NewAdjustment.Reason" class="form-control" required />
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100" title="إضافة"><i class="bi bi-plus-lg"></i></button>
+        </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">اكتب مبلغ أو عدد أيام (اليوم = الأساسي ÷ 30). بعد اعتماد مسير الشهر مينفعش تضيف عليه.</p>
+</div>
+
+<div class="page-card">
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-award"></i> مفيش مكافآت أو جزاءات في الشهر ده</div>
+    }
+    else
+    {
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>الموظف</th><th>النوع</th><th>المبلغ</th><th>الأيام</th><th>السبب</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Items)
+                {
+                    <tr>
+                        <td class="fw-semibold">@a.EmployeeName</td>
+                        <td><span class="badge @(a.Type == AdjustmentType.Bonus ? "text-bg-success" : "text-bg-danger")">@Labels.Of(a.Type)</span></td>
+                        <td>@(a.Amount is decimal x ? Labels.Money(x) : "—")</td>
+                        <td>@(a.Days?.ToString("0.#") ?? "—")</td>
+                        <td>@a.Reason</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-delete-url="@Url.Action("Delete", new { id = a.Id, year = Model.Year, month = Model.Month })"
+                                    data-delete-name="@Labels.Of(a.Type) @a.EmployeeName"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

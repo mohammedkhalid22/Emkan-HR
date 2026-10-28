@@ -1,0 +1,131 @@
+﻿@model DashboardViewModel
+@{
+    ViewData["Title"] = "لوحة التحكم";
+}
+
+<p class="text-muted mb-4">أهلًا بيك، @Model.UserName</p>
+
+@if (Model.Today is not null)
+{
+    <partial name="_CheckInCard" model="Model.Today" />
+}
+
+<div class="row g-3">
+    <div class="col-sm-6 col-xl-3">
+        <a asp-controller="Branches" asp-action="Index" class="stat-card text-reset text-decoration-none">
+            <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-building"></i></div>
+            <div>
+                <div class="stat-value">@Model.BranchesCount</div>
+                <div class="text-muted small">فرع</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-controller="Departments" asp-action="Index" class="stat-card text-reset text-decoration-none">
+            <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-diagram-3"></i></div>
+            <div>
+                <div class="stat-value">@Model.DepartmentsCount</div>
+                <div class="text-muted small">قسم</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-controller="JobTitles" asp-action="Index" class="stat-card text-reset text-decoration-none">
+            <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-briefcase"></i></div>
+            <div>
+                <div class="stat-value">@Model.JobTitlesCount</div>
+                <div class="text-muted small">مسمى وظيفي</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-controller="Employees" asp-action="Index" class="stat-card text-reset text-decoration-none">
+            <div class="stat-icon bg-secondary-subtle text-secondary"><i class="bi bi-person-badge"></i></div>
+            <div>
+                <div class="stat-value">@Model.EmployeesCount</div>
+                <div class="text-muted small">موظف نشط</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@if (Model.CanApprove)
+{
+    <a asp-controller="LeaveRequests" asp-action="Awaiting" class="page-card d-flex align-items-center gap-3 mt-4 text-reset text-decoration-none">
+        <div class="stat-icon bg-warning-subtle text-warning rounded p-3"><i class="bi bi-inbox fs-4"></i></div>
+        <div class="flex-grow-1">
+            <div class="fw-bold">طلبات (إجازات وأذونات) بانتظار موافقتك</div>
+            <div class="text-muted small">@(Model.AwaitingCount == 0 ? "مفيش طلبات دلوقتي" : "دوس عشان تراجعها")</div>
+        </div>
+        <div class="stat-value">@Model.AwaitingCount</div>
+    </a>
+}
+
+@if (Model.Hr is { } hr)
+{
+    <div class="row g-3 mt-1">
+        <div class="col-sm-4">
+            <div class="stat-card"><div class="stat-icon bg-success-subtle text-success"><i class="bi bi-person-check"></i></div>
+                <div><div class="stat-value">@hr.PresentToday <span class="fs-6 text-muted">/ @hr.ActiveEmployees</span></div><div class="text-muted small">حاضرين النهارده</div></div></div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card"><div class="stat-icon bg-info-subtle text-info"><i class="bi bi-calendar2-check"></i></div>
+                <div><div class="stat-value">@hr.OnLeaveToday</div><div class="text-muted small">في إجازة النهارده</div></div></div>
+        </div>
+        <div class="col-sm-4">
+            <a asp-controller="LeaveRequests" asp-action="Index" asp-route-Status="Pending" class="stat-card text-reset text-decoration-none"><div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div>
+                <div><div class="stat-value">@hr.PendingLeaveRequests</div><div class="text-muted small">طلبات إجازة معلقة (كل الشركة)</div></div></a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+            <div class="page-card h-100">
+                <h2 class="h6 fw-bold mb-3">الموظفين حسب القسم</h2>
+                @{ var max = hr.EmployeesByDepartment.Count == 0 ? 1 : hr.EmployeesByDepartment.Max(d => d.Count); }
+                @foreach (var (department, count) in hr.EmployeesByDepartment)
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="small" style="width: 130px">@department</div>
+                        <div class="flex-grow-1 bg-light rounded" style="height: 18px">
+                            <div class="bg-primary rounded" style="height: 18px; width: @(count * 100 / max)%"></div>
+                        </div>
+                        <div class="small fw-bold" style="width: 30px">@count</div>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="page-card h-100">
+                <h2 class="h6 fw-bold mb-3">بينتهي خلال 30 يوم</h2>
+                @{ var expiring = hr.ExpiringContracts.Concat(hr.ExpiringDocuments).OrderBy(x => x.Date).ToList(); }
+                @if (expiring.Count == 0)
+                {
+                    <div class="text-muted">مفيش عقود أو مستندات قربت تخلص</div>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle mb-0">
+                        @foreach (var x in expiring)
+                        {
+                            <tr>
+                                <td><a asp-controller="Employees" asp-action="Details" asp-route-id="@x.EmployeeId">@x.EmployeeName</a></td>
+                                <td>@x.What</td>
+                                <td class="@(x.Date < DateOnly.FromDateTime(DateTime.Today) ? "text-danger fw-semibold" : "")">@x.Date.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.MyBalances.Count > 0)
+{
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+        <h2 class="h6 fw-bold text-muted mb-0">رصيد إجازاتي @DateTime.Today.Year</h2>
+        <a asp-controller="LeaveRequests" asp-action="Create" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> طلب إجازة</a>
+    </div>
+    <partial name="_BalanceCards" model="Model.MyBalances" />
+}

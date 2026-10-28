@@ -1,0 +1,19 @@
+@* One shared confirm dialog. Delete buttons carry data-delete-url and data-delete-name; site.js fills them in. *@
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" id="deleteForm">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                متأكد إنك عايز تمسح <strong id="deleteName"></strong>؟
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> حذف</button>
+            </div>
+        </form>
+    </div>
+</div>

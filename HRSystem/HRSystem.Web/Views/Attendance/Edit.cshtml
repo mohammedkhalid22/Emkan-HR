@@ -1,0 +1,52 @@
+@model ManualAttendanceDto
+@{
+    ViewData["Title"] = "تعديل حضور";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="page-card" style="max-width: 640px">
+    <p class="fw-semibold mb-3">@Model.EmployeeName</p>
+    <form method="post">
+        <input type="hidden" asp-for="EmployeeId" />
+        <input type="hidden" asp-for="EmployeeName" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+                <label asp-for="Date" class="form-label"></label>
+                <input asp-for="Date" type="date" class="form-control" />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" asp-items="Labels.Options<AttendanceStatus>(Labels.Of)" class="form-select"></select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6">
+                <label asp-for="CheckIn" class="form-label"></label>
+                <input asp-for="CheckIn" type="time" class="form-control" />
+                <span asp-validation-for="CheckIn" class="text-danger"></span>
+            </div>
+            <div class="col-sm-6">
+                <label asp-for="CheckOut" class="form-label"></label>
+                <input asp-for="CheckOut" type="time" class="form-control" />
+                <span asp-validation-for="CheckOut" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label asp-for="Notes" class="form-label"></label>
+            <input asp-for="Notes" class="form-control" placeholder="مثلًا: البصمة كانت عطلانة" />
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a href="@(returnUrl ?? Url.Action("Index"))" class="btn btn-light">إلغاء</a>
+    </form>
+    <p class="small text-muted mt-3 mb-0">التأخير والأوفر تايم بيتحسبوا تاني من الوردية. اليوم المتعدل يدويًا مش بيتغير لو اتستورد ملف بصمة بعد كده.</p>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

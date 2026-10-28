@@ -1,0 +1,171 @@
+﻿@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    string Active(string name) => controller == name ? "active" : "";
+    string ActiveAt(string name, params string[] actions) => controller == name && actions.Contains(action) ? "active" : "";
+    var isAdminOrHr = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
+    var canApprove = isAdminOrHr || User.IsInRole(Roles.Manager);
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - نظام الموارد البشرية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-people-fill"></i>
+                <span>نظام الموارد البشرية</span>
+            </a>
+
+            <nav class="sidebar-nav">
+                <a class="sidebar-link @Active("Home")" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-speedometer2"></i> لوحة التحكم
+                </a>
+                <a class="sidebar-link @Active("Portal")" asp-controller="Portal" asp-action="Index">
+                    <i class="bi bi-person-workspace"></i> بوابتي
+                </a>
+
+                <div class="sidebar-section">الهيكل التنظيمي</div>
+                <a class="sidebar-link @Active("Branches")" asp-controller="Branches" asp-action="Index">
+                    <i class="bi bi-building"></i> الفروع
+                </a>
+                <a class="sidebar-link @Active("Departments")" asp-controller="Departments" asp-action="Index">
+                    <i class="bi bi-diagram-3"></i> الأقسام
+                </a>
+                <a class="sidebar-link @Active("JobTitles")" asp-controller="JobTitles" asp-action="Index">
+                    <i class="bi bi-briefcase"></i> المسميات الوظيفية
+                </a>
+
+                <div class="sidebar-section">الموظفين</div>
+                @if (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR) || User.IsInRole(Roles.Manager))
+                {
+                    <a class="sidebar-link @Active("Employees")" asp-controller="Employees" asp-action="Index">
+                        <i class="bi bi-person-badge"></i> @(User.IsInRole(Roles.Manager) && !User.IsInRole(Roles.Admin) && !User.IsInRole(Roles.HR) ? "فريقي" : "الموظفين")
+                    </a>
+                }
+                <a class="sidebar-link" asp-controller="Employees" asp-action="Me">
+                    <i class="bi bi-person-circle"></i> ملفي
+                </a>
+
+                <div class="sidebar-section">الإجازات</div>
+                <a class="sidebar-link @ActiveAt("LeaveRequests", "Mine", "Create")" asp-controller="LeaveRequests" asp-action="Mine">
+                    <i class="bi bi-calendar2-check"></i> إجازاتي
+                </a>
+                @if (canApprove)
+                {
+                    <a class="sidebar-link @ActiveAt("LeaveRequests", "Awaiting")" asp-controller="LeaveRequests" asp-action="Awaiting">
+                        <i class="bi bi-inbox"></i> بانتظار موافقتي
+                    </a>
+                }
+                @if (isAdminOrHr)
+                {
+                    <a class="sidebar-link @ActiveAt("LeaveRequests", "Index")" asp-controller="LeaveRequests" asp-action="Index">
+                        <i class="bi bi-list-check"></i> كل الطلبات
+                    </a>
+                    <a class="sidebar-link @Active("LeaveBalances")" asp-controller="LeaveBalances" asp-action="Index">
+                        <i class="bi bi-calendar2-range"></i> الأرصدة
+                    </a>
+                    <a class="sidebar-link @Active("LeaveTypes")" asp-controller="LeaveTypes" asp-action="Index">
+                        <i class="bi bi-tags"></i> أنواع الإجازات
+                    </a>
+                    <a class="sidebar-link @Active("PublicHolidays")" asp-controller="PublicHolidays" asp-action="Index">
+                        <i class="bi bi-calendar-event"></i> العطلات الرسمية
+                    </a>
+                }
+
+                <div class="sidebar-section">الحضور والانصراف</div>
+                <a class="sidebar-link @ActiveAt("Attendance", "Index", "Edit")" asp-controller="Attendance" asp-action="Index">
+                    <i class="bi bi-clock-history"></i> @(canApprove ? "سجل الحضور" : "حضوري")
+                </a>
+                <a class="sidebar-link @Active("AttendanceRequests")" asp-controller="AttendanceRequests" asp-action="Mine">
+                    <i class="bi bi-door-open"></i> الأذونات والمأموريات
+                </a>
+                @if (isAdminOrHr)
+                {
+                    <a class="sidebar-link @ActiveAt("Attendance", "Monthly")" asp-controller="Attendance" asp-action="Monthly">
+                        <i class="bi bi-table"></i> التقرير الشهري
+                    </a>
+                    <a class="sidebar-link @ActiveAt("Attendance", "Import")" asp-controller="Attendance" asp-action="Import">
+                        <i class="bi bi-fingerprint"></i> استيراد البصمة
+                    </a>
+                    <a class="sidebar-link @Active("Shifts")" asp-controller="Shifts" asp-action="Index">
+                        <i class="bi bi-alarm"></i> الورديات
+                    </a>
+                }
+
+                <div class="sidebar-section">المرتبات</div>
+                <a class="sidebar-link @Active("Payslips")" asp-controller="Payslips" asp-action="Mine">
+                    <i class="bi bi-receipt"></i> كشوف مرتباتي
+                </a>
+                @if (isAdminOrHr)
+                {
+                    <a class="sidebar-link @Active("Payroll")" asp-controller="Payroll" asp-action="Index">
+                        <i class="bi bi-cash-stack"></i> مسيرات المرتبات
+                    </a>
+                    <a class="sidebar-link @Active("Adjustments")" asp-controller="Adjustments" asp-action="Index">
+                        <i class="bi bi-award"></i> المكافآت والجزاءات
+                    </a>
+                    <a class="sidebar-link @Active("Loans")" asp-controller="Loans" asp-action="Index">
+                        <i class="bi bi-wallet2"></i> السلف
+                    </a>
+                    <a class="sidebar-link @Active("SalaryComponents")" asp-controller="SalaryComponents" asp-action="Index">
+                        <i class="bi bi-list-columns"></i> مكونات المرتب
+                    </a>
+
+                    <div class="sidebar-section">التقارير والإدارة</div>
+                    <a class="sidebar-link @Active("Reports")" asp-controller="Reports" asp-action="Index">
+                        <i class="bi bi-bar-chart"></i> التقارير
+                    </a>
+                }
+                @if (User.IsInRole(Roles.Admin))
+                {
+                    <a class="sidebar-link @Active("Users")" asp-controller="Users" asp-action="Index">
+                        <i class="bi bi-people"></i> المستخدمين
+                    </a>
+                    <a class="sidebar-link @Active("Settings")" asp-controller="Settings" asp-action="Index">
+                        <i class="bi bi-gear"></i> الإعدادات
+                    </a>
+                }
+            </nav>
+        </aside>
+
+        <div class="main">
+            <header class="topbar">
+                <button class="btn btn-light d-lg-none" type="button" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="القائمة">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="topbar-title">@ViewData["Title"]</h1>
+                <div class="topbar-user">
+                    <span class="text-muted small d-none d-sm-inline"><i class="bi bi-person-circle"></i> @User.Identity?.Name</span>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-box-arrow-left"></i> خروج
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <main class="content">
+                <partial name="_Alerts" />
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <partial name="_DeleteModal" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

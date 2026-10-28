@@ -1,0 +1,90 @@
+@model LeaveBalancesViewModel
+@{
+    ViewData["Title"] = "أرصدة الإجازات";
+    var f = Model.Filter;
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Year">السنة</label>
+            <input type="number" name="Year" id="Year" value="@f.Year" class="form-control" min="2000" max="2100" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted" for="Search">بحث</label>
+            <input name="Search" id="Search" value="@f.Search" class="form-control" placeholder="الاسم أو الكود" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="DepartmentId">القسم</label>
+            <select name="DepartmentId" id="DepartmentId" asp-items="Model.Departments" class="form-select"><option value="">الكل</option></select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="LeaveTypeId">النوع</label>
+            <select name="LeaveTypeId" id="LeaveTypeId" asp-items="Model.LeaveTypes" class="form-select"><option value="">الكل</option></select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> عرض</button>
+            <a asp-action="Index" class="btn btn-light">مسح</a>
+        </div>
+    </form>
+
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Rows.Count رصيد</span>
+        <form asp-action="Generate" method="post">
+            <input type="hidden" name="year" value="@f.Year" />
+            <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat"></i> توليد أرصدة @f.Year</button>
+        </form>
+    </div>
+
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-calendar2-range"></i>
+            مفيش أرصدة لسنة @f.Year. دوس "توليد أرصدة" عشان تتعمل لكل الموظفين النشطين.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>الموظف</th><th>القسم</th><th>النوع</th>
+                        <th>الرصيد</th><th>المستخدم</th><th>معلق</th><th>المتاح</th>
+                        <th class="text-end">تعديل الرصيد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="Employees" asp-action="Details" asp-route-id="@r.EmployeeId" class="fw-semibold">@r.EmployeeName</a>
+                                <div class="small text-muted" dir="ltr" style="text-align:right">@r.EmployeeCode</div>
+                            </td>
+                            <td>@r.DepartmentName</td>
+                            <td>@r.LeaveTypeName</td>
+                            <td>@Labels.Days(r.Entitled)</td>
+                            <td>@Labels.Days(r.Used)</td>
+                            <td>@(r.Pending > 0 ? Labels.Days(r.Pending) : "—")</td>
+                            <td class="fw-bold @(r.Available <= 0 ? "text-danger" : "")">@Labels.Days(r.Available)</td>
+                            <td class="text-end">
+                                <form asp-action="UpdateEntitled" method="post" class="d-inline-flex gap-1">
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <input type="hidden" name="year" value="@f.Year" />
+                                    <input type="number" name="entitled" value="@Labels.Days(r.Entitled)" step="0.5" min="0" max="365"
+                                           class="form-control form-control-sm" style="width: 80px" aria-label="الرصيد الجديد" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="حفظ"><i class="bi bi-check-lg"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <p class="small text-muted mt-3 mb-0">
+        الرصيد السنوي بيتحسب من نوع الإجازة، وللموظف المعين في نص السنة بالنسبة والتناسب.
+        "معلق" = أيام في طلبات لسه مستنية موافقة. عدّل الرصيد يدويًا لو في أيام مرحّلة من السنة اللي فاتت.
+    </p>
+</div>

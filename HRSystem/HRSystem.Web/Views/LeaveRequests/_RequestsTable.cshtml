@@ -1,0 +1,113 @@
+@model (List<LeaveRequestDto> Items, bool ShowEmployee)
+@{
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state"><i class="bi bi-calendar2-check"></i> مفيش طلبات</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    @if (Model.ShowEmployee) { <th>الموظف</th> }
+                    <th>النوع</th>
+                    <th>من</th>
+                    <th>إلى</th>
+                    <th>الأيام</th>
+                    <th>السبب</th>
+                    <th>الحالة</th>
+                    <th class="text-end">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
+                {
+                    <tr>
+                        @if (Model.ShowEmployee)
+                        {
+                            <td>
+                                <span class="fw-semibold">@r.EmployeeName</span>
+                                <div class="small text-muted">@r.DepartmentName</div>
+                            </td>
+                        }
+                        <td>@r.LeaveTypeName</td>
+                        <td class="text-nowrap">@r.StartDate.ToString("yyyy-MM-dd")</td>
+                        <td class="text-nowrap">@r.EndDate.ToString("yyyy-MM-dd")</td>
+                        <td>@Labels.Days(r.Days)</td>
+                        <td class="small">
+                            @(r.Reason ?? "—")
+                            @if (r.HasAttachment)
+                            {
+                                <a asp-controller="LeaveRequests" asp-action="Attachment" asp-route-id="@r.Id" class="ms-1" title="المرفق"><i class="bi bi-paperclip"></i></a>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @Labels.StatusBadge(r.Status)">@Labels.Of(r)</span>
+                            @if (r.RejectionReason is not null)
+                            {
+                                <div class="small text-danger mt-1">@r.RejectionReason</div>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (r.CanApprove)
+                            {
+                                <form asp-controller="LeaveRequests" asp-action="Approve" asp-route-id="@r.Id" method="post" class="d-inline">
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i> موافقة</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-reject-url="@Url.Action("Reject", "LeaveRequests", new { id = r.Id })" data-reject-name="@r.EmployeeName">
+                                    <i class="bi bi-x-lg"></i> رفض
+                                </button>
+                            }
+                            @if (r.CanCancel)
+                            {
+                                <form asp-controller="LeaveRequests" asp-action="Cancel" asp-route-id="@r.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('متأكد إنك عايز تلغي الطلب؟')">
+                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">إلغاء الطلب</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@* One shared reject dialog; the button fills in the form action *@
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" class="modal-content" id="rejectForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectLabel">رفض طلب <span id="rejectName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <label for="reason" class="form-label">سبب الرفض</label>
+                <textarea name="reason" id="reason" class="form-control" rows="2" required maxlength="500"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                <button type="submit" class="btn btn-danger">رفض</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('click', function (e) {
+        const button = e.target.closest('[data-reject-url]');
+        if (!button) return;
+        document.getElementById('rejectForm').action = button.dataset.rejectUrl;
+        document.getElementById('rejectName').textContent = button.dataset.rejectName;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('rejectModal')).show();
+    });
+</script>

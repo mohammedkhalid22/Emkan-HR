@@ -1,0 +1,85 @@
+@model PortalViewModel
+@{
+    ViewData["Title"] = "بوابتي";
+    var e = Model.Employee;
+    var m = Model.ThisMonth;
+}
+
+<div class="page-card mb-4 d-flex flex-wrap align-items-center gap-3">
+    <partial name="_Avatar" model="(e.Id, e.FullNameAr, e.HasPhoto, 64)" />
+    <div class="flex-grow-1">
+        <h2 class="h5 fw-bold mb-1">@e.FullNameAr</h2>
+        <div class="text-muted">@e.JobTitleName · @e.DepartmentName · <span dir="ltr">@e.Code</span></div>
+        @if (e.ManagerName is not null) { <div class="small text-muted">المدير المباشر: @e.ManagerName</div> }
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-controller="LeaveRequests" asp-action="Create" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> طلب إجازة</a>
+        <a asp-controller="AttendanceRequests" asp-action="Mine" class="btn btn-outline-primary"><i class="bi bi-door-open"></i> إذن / مأمورية</a>
+        <a asp-controller="Employees" asp-action="Me" class="btn btn-light"><i class="bi bi-person"></i> ملفي</a>
+    </div>
+</div>
+
+<partial name="_CheckInCard" model="Model.Today" />
+
+<h2 class="h6 fw-bold text-muted mb-3">رصيد إجازاتي @DateTime.Today.Year</h2>
+<partial name="_BalanceCards" model="Model.Balances" />
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-3">حضوري الشهر ده</h2>
+            @if (m is null)
+            {
+                <div class="text-muted">مفيش تسجيلات</div>
+            }
+            else
+            {
+                <div class="row text-center g-2">
+                    <div class="col-4"><div class="stat-value">@m.PresentDays</div><div class="small text-muted">حضور</div></div>
+                    <div class="col-4"><div class="stat-value @(m.AbsentDays > 0 ? "text-danger" : "")">@m.AbsentDays</div><div class="small text-muted">غياب</div></div>
+                    <div class="col-4"><div class="stat-value">@m.LeaveDays</div><div class="small text-muted">إجازة</div></div>
+                    <div class="col-4"><div class="stat-value fs-5">@Labels.Minutes(m.LateMinutes)</div><div class="small text-muted">تأخير</div></div>
+                    <div class="col-4"><div class="stat-value fs-5">@Labels.Minutes(m.EarlyLeaveMinutes)</div><div class="small text-muted">انصراف مبكر</div></div>
+                    <div class="col-4"><div class="stat-value fs-5">@Labels.Minutes(m.OvertimeMinutes)</div><div class="small text-muted">أوفر تايم</div></div>
+                </div>
+            }
+            <a asp-controller="Attendance" asp-action="Index" class="small d-block mt-3">كل تسجيلاتي ←</a>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-3">كشوف المرتب</h2>
+            @if (Model.Payslips.Count == 0)
+            {
+                <div class="text-muted">لسه مفيش كشوف معتمدة</div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle mb-0">
+                    @foreach (var p in Model.Payslips)
+                    {
+                        <tr>
+                            <td>@Labels.Month(p.Year, p.Month)</td>
+                            <td class="fw-bold">@Labels.Money(p.NetSalary) جنيه</td>
+                            <td class="text-end"><a asp-controller="Payslips" asp-action="Download" asp-route-id="@p.ItemId" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-pdf"></i></a></td>
+                        </tr>
+                    }
+                </table>
+            }
+            @foreach (var l in Model.Loans)
+            {
+                <div class="alert alert-info py-2 mt-3 mb-0 small">
+                    سلفة: متبقي @Labels.Money(l.RemainingAmount) من @Labels.Money(l.Amount) · القسط @Labels.Money(l.MonthlyInstallment)
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="page-card">
+            <h2 class="h6 fw-bold mb-3">آخر طلبات الإجازة</h2>
+            <partial name="~/Views/LeaveRequests/_RequestsTable.cshtml" model="(Model.RecentLeaves, false)" />
+        </div>
+    </div>
+</div>

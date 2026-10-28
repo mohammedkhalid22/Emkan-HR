@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "غير مسموح";
+    Layout = "_AuthLayout";
+}
+
+<div class="text-center">
+    <i class="bi bi-shield-lock text-danger" style="font-size: 3rem"></i>
+    <h2 class="h5 mt-3">مش مسموحلك تفتح الصفحة دي</h2>
+    <p class="text-muted">لو محتاج الصلاحية دي كلم مدير النظام.</p>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">رجوع للرئيسية</a>
+</div>
