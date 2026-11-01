@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IPayrollService, PayrollService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IStatisticsService, StatisticsService>();
         services.AddScoped<ILeaveTypeService, LeaveTypeService>();
         services.AddScoped<IPublicHolidayService, PublicHolidayService>();
         services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();

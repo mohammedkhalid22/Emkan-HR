@@ -1,0 +1,408 @@
+@using System.Text.Json
+@using HRSystem.BLL.Services
+@model StatisticsDto
+@{
+    ViewData["Title"] = "الإحصائيات";
+    var json = JsonSerializer.Serialize(Model, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    string Pct(decimal? v) => v is decimal x ? $"{x:0.#}%" : "—";
+    string Big(decimal v) => v >= 1_000_000 ? $"{v / 1_000_000:0.##} مليون" : v >= 10_000 ? $"{v / 1000:0.#} ألف" : v.ToString("N0");
+}
+
+<div class="stats">
+    @* ---------- Hero ---------- *@
+    <section class="stats-hero">
+        <div>
+            <div class="stats-hero-kicker"><i class="bi bi-graph-up-arrow"></i> لوحة الإحصائيات</div>
+            <h2 class="stats-hero-title">الشركة في @Model.Year</h2>
+            <p class="stats-hero-sub">
+                @Model.ActiveEmployees موظف @(Model.IsCurrentYear ? "النهارده" : "في آخر السنة")
+                · @Model.Hires تعيين · @Model.Terminations إنهاء خدمة
+                @if (Model.PendingRequests > 0) { <span>· <strong>@Model.PendingRequests</strong> طلب مستني موافقة</span> }
+            </p>
+        </div>
+        <form method="get" class="stats-year">
+            <label for="year" class="visually-hidden">السنة</label>
+            <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                @foreach (var y in Model.Years)
+                {
+                    <option value="@y" selected="@(y == Model.Year)">@y</option>
+                }
+            </select>
+        </form>
+    </section>
+
+    @* ---------- KPIs ---------- *@
+    <section class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #2a78d6"><i class="bi bi-people-fill"></i></div>
+            <div class="kpi-label">الموظفين</div>
+            <div class="kpi-value">@Model.ActiveEmployees</div>
+            <div class="kpi-foot">+@Model.Hires تعيين · −@Model.Terminations خروج</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #e34948"><i class="bi bi-arrow-left-right"></i></div>
+            <div class="kpi-label">معدل الدوران</div>
+            <div class="kpi-value">@Pct(Model.TurnoverRate)</div>
+            <div class="kpi-foot">اللي سابوا ÷ متوسط عدد الموظفين</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #1baf7a"><i class="bi bi-fingerprint"></i></div>
+            <div class="kpi-label">نسبة الحضور</div>
+            <div class="kpi-value">@Pct(Model.AttendanceRate)</div>
+            <div class="kpi-foot">حضور ÷ (حضور + غياب) في السنة</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #6250d6"><i class="bi bi-calendar2-check-fill"></i></div>
+            <div class="kpi-label">أيام إجازة معتمدة</div>
+            <div class="kpi-value">@Model.ApprovedLeaveDays.ToString("0.#")</div>
+            <div class="kpi-foot">@Model.PendingRequests طلب مستني موافقة دلوقتي</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #eda100"><i class="bi bi-cash-coin"></i></div>
+            <div class="kpi-label">تكلفة المرتبات</div>
+            <div class="kpi-value">@Big(Model.PayrollCost) <span class="kpi-unit">جنيه</span></div>
+            <div class="kpi-foot">الإجمالي + حصة الشركة في التأمينات</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-icon" style="--tone: #e87ba4"><i class="bi bi-wallet2"></i></div>
+            <div class="kpi-label">متوسط المرتب الأساسي</div>
+            <div class="kpi-value">@Model.AverageBasicSalary.ToString("N0") <span class="kpi-unit">جنيه</span></div>
+            <div class="kpi-foot">سلف مفتوحة: @Model.ActiveLoans بمتبقي @Model.LoansOutstanding.ToString("N0")</div>
+        </div>
+    </section>
+
+    @* ---------- Workforce ---------- *@
+    <h3 class="stats-section"><i class="bi bi-person-badge"></i> القوى العاملة</h3>
+    <section class="chart-grid">
+        <div class="chart-card span-2">
+            <div class="chart-title">التعيينات وإنهاء الخدمة بالشهر</div>
+            <div class="chart-box"><canvas id="hires"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الموظفين حسب القسم</div>
+            <div class="chart-box"><canvas id="departments"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">النوع</div>
+            <div class="chart-box chart-box-sm"><canvas id="gender"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">نوع العقد</div>
+            <div class="chart-box chart-box-sm"><canvas id="contract"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الأعمار</div>
+            <div class="chart-box chart-box-sm"><canvas id="age"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">سنين الخدمة</div>
+            <div class="chart-box chart-box-sm"><canvas id="tenure"></canvas></div>
+        </div>
+    </section>
+
+    @* ---------- Attendance ---------- *@
+    <h3 class="stats-section"><i class="bi bi-clock-history"></i> الحضور والانصراف</h3>
+    <section class="chart-grid">
+        <div class="chart-card span-2">
+            <div class="chart-title">آخر 30 يوم: حالة الموظفين كل يوم</div>
+            <div class="chart-box"><canvas id="daily"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">نسبة الحضور بالشهر</div>
+            <div class="chart-box"><canvas id="attendanceRate"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">ساعات التأخير والانصراف المبكر</div>
+            <div class="chart-box"><canvas id="late"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">ساعات الأوفر تايم</div>
+            <div class="chart-box"><canvas id="overtime"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الأكتر تأخيرًا في @Model.Year</div>
+            @if (Model.TopLate.Count == 0)
+            {
+                <div class="chart-empty"><i class="bi bi-emoji-smile"></i> مفيش تأخير متسجل</div>
+            }
+            else
+            {
+                var maxLate = Model.TopLate.Max(x => x.LateMinutes);
+                <ol class="rank-list">
+                    @foreach (var p in Model.TopLate)
+                    {
+                        <li>
+                            <div class="rank-row">
+                                <a asp-controller="Employees" asp-action="Details" asp-route-id="@p.EmployeeId" class="rank-name">@p.Name</a>
+                                <span class="rank-value">@Labels.Minutes(p.LateMinutes) <small>في @p.LateDays يوم</small></span>
+                            </div>
+                            <div class="rank-bar"><span style="width: @(p.LateMinutes * 100 / maxLate)%"></span></div>
+                        </li>
+                    }
+                </ol>
+            }
+        </div>
+    </section>
+
+    @* ---------- Leaves ---------- *@
+    <h3 class="stats-section"><i class="bi bi-calendar2-check"></i> الإجازات</h3>
+    <section class="chart-grid">
+        <div class="chart-card span-2">
+            <div class="chart-title">أيام الإجازة المعتمدة بالشهر</div>
+            <div class="chart-box"><canvas id="leaveMonthly"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الأيام حسب نوع الإجازة</div>
+            <div class="chart-box"><canvas id="leaveTypes"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">طلبات الإجازة حسب الحالة</div>
+            <div class="chart-box"><canvas id="requests"></canvas></div>
+        </div>
+    </section>
+
+    @* ---------- Payroll ---------- *@
+    <h3 class="stats-section"><i class="bi bi-cash-stack"></i> المرتبات</h3>
+    <section class="chart-grid">
+        <div class="chart-card span-2">
+            <div class="chart-title">التكلفة والصافي بالشهر (جنيه)</div>
+            <div class="chart-box"><canvas id="payrollMonthly"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الاستحقاقات @(Model.LatestRunLabel is null ? "" : $"· {Model.LatestRunLabel}")</div>
+            <div class="chart-box"><canvas id="earnings"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">الاستقطاعات @(Model.LatestRunLabel is null ? "" : $"· {Model.LatestRunLabel}")</div>
+            <div class="chart-box"><canvas id="deductions"></canvas></div>
+        </div>
+        <div class="chart-card span-2">
+            <div class="chart-title">متوسط صافي المرتب حسب القسم @(Model.LatestRunLabel is null ? "" : $"· {Model.LatestRunLabel}")</div>
+            <div class="chart-box chart-box-sm"><canvas id="netByDept"></canvas></div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        const data = @Html.Raw(json);
+        const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+        // Categorical slots in fixed order (CVD-validated palette); status colors only where the meaning is a state
+        const c = { blue: '#2a78d6', orange: '#eb6834', aqua: '#1baf7a', yellow: '#eda100', magenta: '#e87ba4', green: '#008300', violet: '#6250d6', red: '#e34948' };
+        const status = { good: '#0ca30c', warning: '#fab219', critical: '#d03b3b', muted: '#b9b7af' };
+        const ink = { primary: '#0b0b0b', secondary: '#52514e', muted: '#898781', grid: '#e1e0d9', axis: '#c3c2b7' };
+
+        Chart.defaults.font.family = "'Cairo', system-ui, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = ink.secondary;
+        Chart.defaults.maintainAspectRatio = false;
+        Chart.defaults.plugins.legend.rtl = true;
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.boxWidth = 8;
+        Chart.defaults.plugins.tooltip.rtl = true;
+        Chart.defaults.plugins.tooltip.textDirection = 'rtl';
+        Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+        Chart.defaults.plugins.tooltip.titleFont = { weight: '700' };
+
+        const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+        const money = v => nf.format(Math.round(v)) + ' جنيه';
+
+        // Shared axis look: recessive grid, no axis border noise
+        const scale = (extra = {}) => ({
+            grid: { color: ink.grid, drawTicks: false },
+            border: { display: false },
+            ticks: { color: ink.muted, padding: 6 },
+            ...extra
+        });
+        const noGrid = (extra = {}) => ({ grid: { display: false }, border: { color: ink.axis }, ticks: { color: ink.muted }, ...extra });
+
+        const bar = { borderRadius: 4, borderSkipped: 'start', maxBarThickness: 28, borderWidth: 0 };
+
+        // A chart with nothing to show gets a message instead of empty axes
+        function empty(id, values) {
+            const has = values.some(v => v !== null && v !== 0);
+            if (!has) {
+                const box = document.getElementById(id).parentElement;
+                box.innerHTML = '<div class="chart-empty"><i class="bi bi-inbox"></i> مفيش بيانات لسه</div>';
+            }
+            return !has;
+        }
+
+        // Arabic reads right to left: categories (months, departments) start on the right,
+        // and the value axis sits on the right edge
+        function rightToLeft(config) {
+            const s = config.options?.scales;
+            if (!s?.x || !s?.y) return;
+            const horizontal = config.options.indexAxis === 'y';
+            s.x.reverse = true;
+            s.y.position = 'right';
+            const category = horizontal ? s.y : s.x;
+            // Few categories (age bands, departments): show every label instead of skipping some
+            const few = (config.data.labels?.length ?? 0) <= 8;
+            category.ticks = { ...category.ticks, maxRotation: 0, ...(few ? { autoSkip: false, font: { size: 11 } } : {}) };
+        }
+
+        function make(id, config, values) {
+            if (empty(id, values)) return;
+            rightToLeft(config);
+            new Chart(document.getElementById(id), config);
+        }
+
+        // ---------- Workforce ----------
+
+        make('hires', {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: data.hiresVsTerminations.map((s, i) => ({ label: s.name, data: s.values, backgroundColor: [c.blue, c.orange][i], ...bar }))
+            },
+            options: { scales: { x: noGrid(), y: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }) } }
+        }, data.hiresVsTerminations.flatMap(s => s.values));
+
+        make('departments', {
+            type: 'bar',
+            data: { labels: data.byDepartment.map(p => p.label), datasets: [{ label: 'موظفين', data: data.byDepartment.map(p => p.value), backgroundColor: c.blue, ...bar }] },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }), y: noGrid() } }
+        }, data.byDepartment.map(p => p.value));
+
+        const donut = (id, points, colors) => make(id, {
+            type: 'doughnut',
+            data: { labels: points.map(p => p.label), datasets: [{ data: points.map(p => p.value), backgroundColor: colors, borderColor: '#fff', borderWidth: 2, hoverOffset: 6 }] },
+            options: {
+                cutout: '68%',
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                return ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw * 100 / total)}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        }, points.map(p => p.value));
+
+        donut('gender', data.byGender, [c.blue, c.orange]);
+        donut('contract', data.byContract, [c.blue, c.orange, c.aqua]);
+
+        const columns = (id, points, color) => make(id, {
+            type: 'bar',
+            data: { labels: points.map(p => p.label), datasets: [{ label: 'موظفين', data: points.map(p => p.value), backgroundColor: color, ...bar }] },
+            options: { plugins: { legend: { display: false } }, scales: { x: noGrid(), y: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }) } }
+        }, points.map(p => p.value));
+
+        columns('age', data.byAge, c.violet);
+        columns('tenure', data.byTenure, c.aqua);
+
+        // ---------- Attendance ----------
+
+        make('daily', {
+            type: 'bar',
+            data: {
+                labels: data.dailyLabels,
+                datasets: data.dailyStatus.map((s, i) => ({
+                    label: s.name, data: s.values,
+                    backgroundColor: [status.good, c.blue, c.violet, status.critical][i],
+                    borderColor: '#fff', borderWidth: { top: 2 }, borderRadius: 2, maxBarThickness: 18
+                }))
+            },
+            options: {
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: noGrid({ stacked: true, ticks: { color: ink.muted, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }),
+                    y: scale({ stacked: true, beginAtZero: true, ticks: { precision: 0, color: ink.muted } })
+                }
+            }
+        }, data.dailyStatus.flatMap(s => s.values));
+
+        make('attendanceRate', {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'نسبة الحضور', data: data.monthlyAttendanceRate, borderColor: c.aqua, borderWidth: 2,
+                    backgroundColor: 'rgba(27, 175, 122, 0.10)', fill: true, tension: 0.35,
+                    pointRadius: 4, pointBackgroundColor: c.aqua, pointBorderColor: '#fff', pointBorderWidth: 2, spanGaps: true
+                }]
+            },
+            options: {
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw}%` } } },
+                scales: { x: noGrid(), y: scale({ min: 0, max: 100, ticks: { callback: v => v + '%', color: ink.muted, stepSize: 25 } }) }
+            }
+        }, data.monthlyAttendanceRate);
+
+        const hours = (id, values, color, label) => make(id, {
+            type: 'bar',
+            data: { labels: months, datasets: [{ label, data: values, backgroundColor: color, ...bar }] },
+            options: {
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${nf.format(ctx.raw)} ساعة` } } },
+                scales: { x: noGrid(), y: scale({ beginAtZero: true }) }
+            }
+        }, values);
+
+        hours('late', data.monthlyLateHours, c.orange, 'تأخير');
+        hours('overtime', data.monthlyOvertimeHours, c.blue, 'أوفر تايم');
+
+        // ---------- Leaves ----------
+
+        make('leaveMonthly', {
+            type: 'bar',
+            data: { labels: months, datasets: [{ label: 'أيام', data: data.monthlyLeaveDays, backgroundColor: c.violet, ...bar }] },
+            options: { plugins: { legend: { display: false } }, scales: { x: noGrid(), y: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }) } }
+        }, data.monthlyLeaveDays);
+
+        make('leaveTypes', {
+            type: 'bar',
+            data: { labels: data.leaveDaysByType.map(p => p.label), datasets: [{ label: 'أيام', data: data.leaveDaysByType.map(p => p.value), backgroundColor: c.violet, ...bar }] },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }), y: noGrid() } }
+        }, data.leaveDaysByType.map(p => p.value));
+
+        make('requests', {
+            type: 'bar',
+            data: {
+                labels: data.requestsByStatus.map(p => p.label),
+                datasets: [{ label: 'طلبات', data: data.requestsByStatus.map(p => p.value), backgroundColor: [status.good, status.warning, status.critical, status.muted], ...bar }]
+            },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: scale({ beginAtZero: true, ticks: { precision: 0, color: ink.muted } }), y: noGrid() } }
+        }, data.requestsByStatus.map(p => p.value));
+
+        // ---------- Payroll ----------
+
+        make('payrollMonthly', {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [
+                    { label: 'التكلفة على الشركة', data: data.monthlyCost, borderColor: c.blue, backgroundColor: c.blue, borderWidth: 2, pointRadius: 5, pointBorderColor: '#fff', pointBorderWidth: 2, tension: 0.3 },
+                    { label: 'صافي المرتبات', data: data.monthlyNet, borderColor: c.orange, backgroundColor: c.orange, borderWidth: 2, pointRadius: 5, pointBorderColor: '#fff', pointBorderWidth: 2, tension: 0.3 }
+                ]
+            },
+            options: {
+                interaction: { mode: 'index', intersect: false },
+                plugins: { tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${money(ctx.raw)}` } } },
+                scales: { x: noGrid(), y: scale({ beginAtZero: true, ticks: { color: ink.muted, callback: v => nf.format(v / 1000) + ' ألف' } }) }
+            }
+        }, [...data.monthlyCost, ...data.monthlyNet]);
+
+        const moneyBars = (id, points, color) => make(id, {
+            type: 'bar',
+            data: { labels: points.map(p => p.label), datasets: [{ label: 'جنيه', data: points.map(p => p.value), backgroundColor: color, ...bar }] },
+            options: {
+                indexAxis: 'y',
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + money(ctx.raw) } } },
+                scales: { x: scale({ beginAtZero: true, ticks: { color: ink.muted, callback: v => nf.format(v / 1000) + ' ألف' } }), y: noGrid() }
+            }
+        }, points.map(p => p.value));
+
+        moneyBars('earnings', data.latestEarnings, c.aqua);
+        moneyBars('deductions', data.latestDeductions, c.red);
+        moneyBars('netByDept', data.averageNetByDepartment, c.blue);
+    </script>
+}
