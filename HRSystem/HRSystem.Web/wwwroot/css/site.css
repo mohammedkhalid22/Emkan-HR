@@ -1185,3 +1185,10 @@ body {
 @media (display-mode: standalone) {
   .topbar { padding-top: max(8px, env(safe-area-inset-top)); }
 }
+
+/* ---------- Settings switches ---------- */
+.setting-switch { padding: .65rem 0; border-bottom: 1px solid #eef2f7; }
+.setting-switch:last-child { border-bottom: 0; padding-bottom: 0; }
+.setting-switch .form-switch { display: flex; align-items: center; gap: .6rem; padding-inline-start: 0; }
+.setting-switch .form-check-input { float: none; margin: 0; width: 2.4em; height: 1.3em; cursor: pointer; flex-shrink: 0; }
+.setting-switch .small { padding-inline-start: 3em; margin-top: .15rem; }

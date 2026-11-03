@@ -196,9 +196,16 @@ public static class Labels
         "InsuranceMinSalary" => "الحد الأدنى لأجر الاشتراك (0 = بدون)",
         "InsuranceMaxSalary" => "الحد الأقصى لأجر الاشتراك (0 = بدون)",
         "TaxPersonalExemption" => "الإعفاء الشخصي السنوي من الضريبة",
-        "RequireTwoFactorForAdmins" => "إلزام الأدمن والـ HR بالتحقق بخطوتين (1 = أيوه، 0 = لأ)",
-        "RequireSelfie" => "سيلفي مع تسجيل الحضور والانصراف (1 = أيوه، 0 = لأ)",
+        "RequireTwoFactorForAdmins" => "إلزام الأدمن والـ HR بالتحقق بخطوتين",
+        "RequireSelfie" => "سيلفي مع تسجيل الحضور والانصراف",
         _ => key
+    };
+
+    // On/off settings (stored as 1/0) shown as switches, with a line on what turning them on does
+    public static readonly Dictionary<string, string> SwitchSettings = new()
+    {
+        ["RequireTwoFactorForAdmins"] = "أي أدمن أو HR مفعّلش التحقق بخطوتين هيتحوّل لصفحة تفعيله قبل ما يكمّل شغل",
+        ["RequireSelfie"] = "الكاميرا الأمامية بتفتح مع تسجيل الحضور والانصراف، ومن غير صورة التسجيل بيترفض"
     };
 
     // 80 → "1:20"

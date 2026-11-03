@@ -10,9 +10,27 @@
 
 <div class="row g-4">
     <div class="col-xl-6">
+        <div class="page-card mb-4">
+            <h2 class="h6 fw-bold mb-3">الأمان والحضور</h2>
+            @foreach (var s in Model.Settings.Where(s => Labels.SwitchSettings.ContainsKey(s.Key)))
+            {
+                var on = s.Value == "1";
+                @* The switch posts the opposite of the current value as soon as it is flipped *@
+                <form asp-action="Update" method="post" class="setting-switch">
+                    <input type="hidden" name="key" value="@s.Key" />
+                    <input type="hidden" name="value" value="@(on ? "0" : "1")" />
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="v-@s.Key" checked="@on" onchange="this.form.submit()" />
+                        <label class="form-check-label fw-semibold" for="v-@s.Key">@Labels.Setting(s.Key)</label>
+                    </div>
+                    <div class="small text-muted">@Labels.SwitchSettings[s.Key]</div>
+                </form>
+            }
+        </div>
+
         <div class="page-card">
             <h2 class="h6 fw-bold mb-3">إعدادات الحساب</h2>
-            @foreach (var s in Model.Settings)
+            @foreach (var s in Model.Settings.Where(s => !Labels.SwitchSettings.ContainsKey(s.Key)))
             {
                 <form asp-action="Update" method="post" class="row g-2 align-items-center mb-2">
                     <input type="hidden" name="key" value="@s.Key" />

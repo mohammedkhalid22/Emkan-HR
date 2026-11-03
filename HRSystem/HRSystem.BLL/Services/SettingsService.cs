@@ -21,6 +21,9 @@ public class SettingsService : ISettingsService
 {
     public const string WeekendDays = "WeekendDays";
 
+    // Settings that are only on (1) or off (0)
+    private static readonly string[] OnOffKeys = ["RequireTwoFactorForAdmins", AttendanceService.RequireSelfieKey];
+
     private readonly HRDbContext _context;
 
     public SettingsService(HRDbContext context)
@@ -58,6 +61,11 @@ public class SettingsService : ISettingsService
             var parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length != LeaveCalculator.ParseWeekend(value).Count)
                 return ServiceResult.Failure("أيام الإجازة لازم تتكتب بالإنجليزي مفصولة بفاصلة، زي: Friday,Saturday");
+        }
+        else if (OnOffKeys.Contains(key))
+        {
+            if (value is not ("0" or "1"))
+                return ServiceResult.Failure("الإعداد ده يا مفعّل (1) يا مقفول (0)");
         }
         else if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) || number < 0)
         {
