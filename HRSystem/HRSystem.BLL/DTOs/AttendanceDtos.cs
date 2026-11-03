@@ -73,6 +73,8 @@ public class AttendanceRecordDto
     public double? CheckOutLatitude { get; set; }
     public double? CheckOutLongitude { get; set; }
     public int? CheckOutDistanceMeters { get; set; }
+    public bool HasCheckInPhoto { get; set; }
+    public bool HasCheckOutPhoto { get; set; }
     public int? BranchRadiusMeters { get; set; }
 }
 
@@ -86,6 +88,9 @@ public class TodayAttendanceDto
     public TimeOnly? CheckOut { get; set; }
     public int LateMinutes { get; set; }
     public bool IsWorkingDay { get; set; }
+
+    // The check-in buttons open the front camera first
+    public bool RequireSelfie { get; set; }
 }
 
 public class ManualAttendanceDto

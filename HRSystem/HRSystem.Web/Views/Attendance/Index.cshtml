@@ -23,6 +23,18 @@
             <i class="bi bi-geo-alt-fill"></i>@if (outside) { <small>@distance م</small> }
         </a>
     }
+
+    // Opens the selfie in the dialog at the bottom of the page
+    void SelfieLink(AttendanceRecordDto record, string which, bool has)
+    {
+        if (!has)
+            return;
+        <a href="@Url.Action("Selfie", new { id = record.Id, which })" class="text-decoration-none text-primary" title="صورة السيلفي"
+           data-selfie-url="@Url.Action("Selfie", new { id = record.Id, which })"
+           data-selfie-title="@record.EmployeeName · @(which == "in" ? "حضور" : "انصراف") @record.Date.ToString("yyyy-MM-dd") @Labels.Time(which == "in" ? record.CheckIn : record.CheckOut)">
+            <i class="bi bi-camera-fill"></i>
+        </a>
+    }
 }
 
 @if (Model.Today is not null)
@@ -112,8 +124,8 @@
                             }
                             <td class="text-nowrap">@r.Date.ToString("yyyy-MM-dd")</td>
                             <td><span class="badge @Labels.StatusBadge(r.Status)">@Labels.Of(r.Status)</span></td>
-                            <td class="text-nowrap">@Labels.Time(r.CheckIn) @{ GeoPin(r.CheckInLatitude, r.CheckInLongitude, r.CheckInDistanceMeters, r.BranchRadiusMeters); }</td>
-                            <td class="text-nowrap">@Labels.Time(r.CheckOut) @{ GeoPin(r.CheckOutLatitude, r.CheckOutLongitude, r.CheckOutDistanceMeters, r.BranchRadiusMeters); }</td>
+                            <td class="text-nowrap">@Labels.Time(r.CheckIn) @{ GeoPin(r.CheckInLatitude, r.CheckInLongitude, r.CheckInDistanceMeters, r.BranchRadiusMeters); SelfieLink(r, "in", r.HasCheckInPhoto); }</td>
+                            <td class="text-nowrap">@Labels.Time(r.CheckOut) @{ GeoPin(r.CheckOutLatitude, r.CheckOutLongitude, r.CheckOutDistanceMeters, r.BranchRadiusMeters); SelfieLink(r, "out", r.HasCheckOutPhoto); }</td>
                             <td class="@(r.LateMinutes > 0 ? "text-danger fw-semibold" : "")">@Labels.Minutes(r.LateMinutes)</td>
                             <td class="@(r.EarlyLeaveMinutes > 0 ? "text-danger" : "")">@Labels.Minutes(r.EarlyLeaveMinutes)</td>
                             <td class="@(r.OvertimeMinutes > 0 ? "text-success fw-semibold" : "")">@Labels.Minutes(r.OvertimeMinutes)</td>
@@ -151,3 +163,30 @@
         * = متعدل يدويًا (حط الماوس على المصدر عشان تشوف السبب).
     </p>
 </div>
+
+<div class="modal fade" id="selfieModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h2 class="modal-title fs-6" id="selfieTitle"></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body p-2 text-center">
+                <img id="selfieImage" alt="صورة السيلفي" class="img-fluid rounded" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('[data-selfie-url]');
+            if (!link) return;
+            e.preventDefault();
+            document.getElementById('selfieImage').src = link.dataset.selfieUrl;
+            document.getElementById('selfieTitle').textContent = link.dataset.selfieTitle;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('selfieModal')).show();
+        });
+    </script>
+}

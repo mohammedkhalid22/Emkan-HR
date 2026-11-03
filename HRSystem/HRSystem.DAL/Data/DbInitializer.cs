@@ -79,7 +79,8 @@ public static class DbInitializer
             ["InsuranceMinSalary"] = ("0", "الحد الأدنى لأجر الاشتراك — يحدث كل يناير"),
             ["InsuranceMaxSalary"] = ("0", "الحد الأقصى لأجر الاشتراك — يحدث كل يناير"),
             ["TaxPersonalExemption"] = ("0", "الإعفاء الشخصي السنوي — يراجع مع المحاسب"),
-            ["RequireTwoFactorForAdmins"] = ("0", "1 = الأدمن والـ HR لازم يفعّلوا التحقق بخطوتين قبل ما يشتغلوا")
+            ["RequireTwoFactorForAdmins"] = ("0", "1 = الأدمن والـ HR لازم يفعّلوا التحقق بخطوتين قبل ما يشتغلوا"),
+            ["RequireSelfie"] = ("0", "1 = الموظف لازم ياخد صورة سيلفي وهو بيسجل حضور أو انصراف من البرنامج")
         };
 
         var existingKeys = await context.SystemSettings.Select(s => s.Key).ToListAsync();

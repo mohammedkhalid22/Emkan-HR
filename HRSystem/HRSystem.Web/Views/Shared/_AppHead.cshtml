@@ -1,0 +1,14 @@
+@* Installable app (PWA): icon, home-screen name, colours, and the service worker *@
+<link rel="icon" href="~/img/emkan-mark.svg" type="image/svg+xml" />
+<link rel="manifest" href="~/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="~/img/apple-touch-icon.png" />
+<meta name="theme-color" content="#0f2a4a" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="إمكان HR" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () { }); });
+    }
+</script>

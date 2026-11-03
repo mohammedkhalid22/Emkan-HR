@@ -42,6 +42,10 @@ namespace HRSystem.DAL.Migrations
                     b.Property<double?>("CheckInLongitude")
                         .HasColumnType("float");
 
+                    b.Property<string>("CheckInPhotoPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<TimeOnly?>("CheckOut")
                         .HasColumnType("time");
 
@@ -53,6 +57,10 @@ namespace HRSystem.DAL.Migrations
 
                     b.Property<double?>("CheckOutLongitude")
                         .HasColumnType("float");
+
+                    b.Property<string>("CheckOutPhotoPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");

@@ -68,6 +68,8 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
     public void Configure(EntityTypeBuilder<AttendanceRecord> builder)
     {
         builder.Property(a => a.Notes).HasMaxLength(250);
+        builder.Property(a => a.CheckInPhotoPath).HasMaxLength(300);
+        builder.Property(a => a.CheckOutPhotoPath).HasMaxLength(300);
         builder.HasIndex(a => new { a.EmployeeId, a.Date }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(a => a.Date);
         builder.HasOne(a => a.Employee).WithMany(e => e.AttendanceRecords).HasForeignKey(a => a.EmployeeId);

@@ -35,6 +35,10 @@ public class AttendanceRecord : BaseEntity
     public double? CheckOutLongitude { get; set; }
     public int? CheckOutDistanceMeters { get; set; }
 
+    // Selfies taken with the phone at check-in / check-out (paths in file storage)
+    public string? CheckInPhotoPath { get; set; }
+    public string? CheckOutPhotoPath { get; set; }
+
     // Why HR edited the record by hand
     public string? Notes { get; set; }
 }

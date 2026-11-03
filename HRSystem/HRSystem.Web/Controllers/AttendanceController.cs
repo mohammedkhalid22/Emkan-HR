@@ -1,4 +1,4 @@
-using HRSystem.BLL.Common;
+﻿using HRSystem.BLL.Common;
 using HRSystem.BLL.DTOs;
 using HRSystem.BLL.Services;
 using HRSystem.Domain.Identity;
@@ -54,11 +54,11 @@ public class AttendanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CheckIn(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError)
+    public async Task<IActionResult> CheckIn(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError, IFormFile? selfie)
     {
         var me = await _employeeService.GetApproverAsync(User);
         var result = me.EmployeeId is int id
-            ? await _attendanceService.CheckInAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError))
+            ? await _attendanceService.CheckInAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError), selfie.ToFileUpload())
             : ServiceResult.Failure("حسابك مش مربوط بملف موظف");
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "اتسجل حضورك" : result.Error;
         return Back(returnUrl);
@@ -66,14 +66,24 @@ public class AttendanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CheckOut(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError)
+    public async Task<IActionResult> CheckOut(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError, IFormFile? selfie)
     {
         var me = await _employeeService.GetApproverAsync(User);
         var result = me.EmployeeId is int id
-            ? await _attendanceService.CheckOutAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError))
+            ? await _attendanceService.CheckOutAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError), selfie.ToFileUpload())
             : ServiceResult.Failure("حسابك مش مربوط بملف موظف");
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "اتسجل انصرافك" : result.Error;
         return Back(returnUrl);
+    }
+
+    // The selfie of one check-in (which=in) or check-out (which=out)
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> Selfie(int id, string which)
+    {
+        var scope = await _employeeService.GetScopeAsync(User);
+        var path = await _attendanceService.GetSelfiePathAsync(id, which == "out", scope);
+        var stream = path is null ? null : _fileStorage.Open(path);
+        return stream is null ? NotFound() : File(stream, FileRules.ContentTypeFor(path!));
     }
 
     private static GeoPoint? ToPoint(double? latitude, double? longitude, double? accuracy)

@@ -11,9 +11,13 @@ namespace HRSystem.BLL.Services;
 public interface IAttendanceService
 {
     Task<TodayAttendanceDto> GetTodayAsync(int employeeId);
-    // location = where the browser says the employee is; locationError = why it couldn't tell
-    Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null);
-    Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null);
+    // location = where the browser says the employee is; locationError = why it couldn't tell;
+    // selfie = the photo taken at that moment (required when the RequireSelfie setting is 1)
+    Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null, FileUpload? selfie = null);
+    Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null, FileUpload? selfie = null);
+
+    // The stored selfie of one check-in (or check-out), if the viewer may see that record
+    Task<string?> GetSelfiePathAsync(int recordId, bool checkOut, EmployeeAccessScope scope);
 
     Task<PagedResult<AttendanceRecordDto>> GetRecordsAsync(AttendanceFilterDto filter, EmployeeAccessScope scope);
     Task<ManualAttendanceDto?> GetForEditAsync(int employeeId, DateOnly date);
@@ -30,6 +34,8 @@ public interface IAttendanceService
 public class AttendanceService : IAttendanceService
 {
     private const string OvertimeMinimumKey = "OvertimeMinimumMinutes";
+    public const string RequireSelfieKey = "RequireSelfie";
+    private const string SelfieFolder = "selfies";
 
     // Used only if no shift exists at all
     private static readonly ShiftTimes FallbackShift = new(new TimeOnly(9, 0), new TimeOnly(17, 0), 15);
@@ -41,9 +47,11 @@ public class AttendanceService : IAttendanceService
     private readonly IGenericRepository<AttendanceRecord> _records;
     private readonly IWorkCalendarService _calendar;
     private readonly ISettingsService _settings;
+    private readonly IFileStorage _files;
 
-    public AttendanceService(IUnitOfWork unitOfWork, IWorkCalendarService calendar, ISettingsService settings)
+    public AttendanceService(IUnitOfWork unitOfWork, IWorkCalendarService calendar, ISettingsService settings, IFileStorage files)
     {
+        _files = files;
         _unitOfWork = unitOfWork;
         _records = unitOfWork.Repository<AttendanceRecord>();
         _calendar = calendar;
@@ -80,11 +88,12 @@ public class AttendanceService : IAttendanceService
             CheckIn = record?.CheckIn,
             CheckOut = record?.CheckOut,
             LateMinutes = record?.LateMinutes ?? 0,
-            IsWorkingDay = await _calendar.IsWorkingDayAsync(Today)
+            IsWorkingDay = await _calendar.IsWorkingDayAsync(Today),
+            RequireSelfie = await _settings.GetIntAsync(RequireSelfieKey, 0) == 1
         };
     }
 
-    public async Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null)
+    public async Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null, FileUpload? selfie = null)
     {
         var employee = await _unitOfWork.Repository<Employee>().QueryNoTracking().FirstOrDefaultAsync(e => e.Id == employeeId);
         if (employee is null || employee.Status != EmployeeStatus.Active)
@@ -97,6 +106,9 @@ public class AttendanceService : IAttendanceService
         var place = await CheckLocationAsync(employeeId, location, locationError, "حضور");
         if (!place.Result.Succeeded)
             return place.Result;
+        var photo = await CheckSelfieAsync(selfie, "حضور");
+        if (!photo.Succeeded)
+            return photo;
 
         if (record is null)
         {
@@ -110,12 +122,13 @@ public class AttendanceService : IAttendanceService
         record.CheckInLatitude = location?.Latitude;
         record.CheckInLongitude = location?.Longitude;
         record.CheckInDistanceMeters = place.DistanceMeters;
+        record.CheckInPhotoPath = await SaveSelfieAsync(selfie);
         await ComputeAsync(record, employee.ShiftId);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null)
+    public async Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null, FileUpload? selfie = null)
     {
         var record = await _records.Query().Include(r => r.Employee)
             .FirstOrDefaultAsync(r => r.EmployeeId == employeeId && r.Date == Today);
@@ -131,14 +144,47 @@ public class AttendanceService : IAttendanceService
         var place = await CheckLocationAsync(employeeId, location, locationError, "انصراف");
         if (!place.Result.Succeeded)
             return place.Result;
+        var photo = await CheckSelfieAsync(selfie, "انصراف");
+        if (!photo.Succeeded)
+            return photo;
 
         record.CheckOut = now;
         record.CheckOutLatitude = location?.Latitude;
         record.CheckOutLongitude = location?.Longitude;
         record.CheckOutDistanceMeters = place.DistanceMeters;
+        record.CheckOutPhotoPath = await SaveSelfieAsync(selfie);
         await ComputeAsync(record, record.Employee.ShiftId);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
+    }
+
+    private async Task<ServiceResult> CheckSelfieAsync(FileUpload? selfie, string action)
+    {
+        if (selfie is null)
+            return await _settings.GetIntAsync(RequireSelfieKey, 0) == 1
+                ? ServiceResult.Failure($"لازم تاخد صورة سيلفي عشان تسجل {action}. اسمح للبرنامج يفتح الكاميرا وجرّب تاني")
+                : ServiceResult.Success();
+        return FileRules.Validate(selfie, FileRules.PhotoExtensions) is string error
+            ? ServiceResult.Failure("صورة السيلفي: " + error)
+            : ServiceResult.Success();
+    }
+
+    private async Task<string?> SaveSelfieAsync(FileUpload? selfie)
+        => selfie is null ? null : await _files.SaveAsync(selfie, $"{SelfieFolder}/{Today:yyyy-MM}");
+
+    public async Task<string?> GetSelfiePathAsync(int recordId, bool checkOut, EmployeeAccessScope scope)
+    {
+        var record = await _records.QueryNoTracking()
+            .Where(r => r.Id == recordId)
+            .Select(r => new { r.EmployeeId, r.Employee.ManagerId, r.CheckInPhotoPath, r.CheckOutPhotoPath })
+            .FirstOrDefaultAsync();
+        if (record is null)
+            return null;
+
+        // Same reach as the records list: HR all, a manager their team, an employee their own
+        var own = scope.OwnEmployeeId ?? -1;
+        var allowed = scope.SeeAll || record.EmployeeId == own || (scope.SeeTeam && record.ManagerId == own);
+        return allowed ? (checkOut ? record.CheckOutPhotoPath : record.CheckInPhotoPath) : null;
     }
 
     // The branch (through the department) decides whether and where the employee may check in.
@@ -240,6 +286,8 @@ public class AttendanceService : IAttendanceService
                 CheckOutLatitude = r.CheckOutLatitude,
                 CheckOutLongitude = r.CheckOutLongitude,
                 CheckOutDistanceMeters = r.CheckOutDistanceMeters,
+                HasCheckInPhoto = r.CheckInPhotoPath != null,
+                HasCheckOutPhoto = r.CheckOutPhotoPath != null,
                 BranchRadiusMeters = (int?)r.Employee.Department.Branch!.AttendanceRadiusMeters
             })
             .ToListAsync();

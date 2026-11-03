@@ -1,4 +1,4 @@
-@model TodayAttendanceDto
+﻿@model TodayAttendanceDto
 @{
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
@@ -19,20 +19,32 @@
             · انصراف: <strong>@Labels.Time(Model.CheckOut)</strong>
             @if (Model.LateMinutes > 0) { <span class="text-danger">· متأخر @Model.LateMinutes دقيقة</span> }
         </div>
+        @if (Model.RequireSelfie && Model.CheckOut is null)
+        {
+            <div class="small text-muted mt-1"><i class="bi bi-camera"></i> الكاميرا الأمامية هتفتح تاخد صورة سيلفي مع التسجيل</div>
+        }
     </div>
     @if (Model.CheckIn is null)
     {
-        <form asp-controller="Attendance" asp-action="CheckIn" method="post" data-geo>
+        <form asp-controller="Attendance" asp-action="CheckIn" method="post" enctype="multipart/form-data" data-geo data-selfie="@(Model.RequireSelfie ? "1" : null)">
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             <partial name="_GeoFields" />
+            @if (Model.RequireSelfie)
+            {
+                <input type="file" name="selfie" accept="image/*" capture="user" class="d-none" aria-label="صورة سيلفي" />
+            }
             <button type="submit" class="btn btn-success"><i class="bi bi-box-arrow-in-left"></i> تسجيل حضور</button>
         </form>
     }
     else if (Model.CheckOut is null)
     {
-        <form asp-controller="Attendance" asp-action="CheckOut" method="post" data-geo>
+        <form asp-controller="Attendance" asp-action="CheckOut" method="post" enctype="multipart/form-data" data-geo data-selfie="@(Model.RequireSelfie ? "1" : null)">
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             <partial name="_GeoFields" />
+            @if (Model.RequireSelfie)
+            {
+                <input type="file" name="selfie" accept="image/*" capture="user" class="d-none" aria-label="صورة سيلفي" />
+            }
             <button type="submit" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> تسجيل انصراف</button>
         </form>
     }

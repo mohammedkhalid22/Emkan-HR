@@ -1170,3 +1170,18 @@ body {
 .audit-history { margin-inline-start: 6px; color: var(--bs-secondary-color); }
 .audit-history:hover { color: var(--bs-primary); }
 .audit-table details summary { cursor: pointer; color: var(--bs-primary); font-size: .8rem; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 575.98px) {
+  /* Check-in is the main thing an employee does from the phone: make it a big, full-width button */
+  form[data-geo] { width: 100%; }
+  form[data-geo] .btn { width: 100%; padding: .8rem; font-size: 1.1rem; }
+  .content { padding-left: 12px; padding-right: 12px; }
+  .page-card { padding: 14px; }
+  .stat-value { font-size: 1.35rem; }
+}
+
+/* Installed app (opened from the home-screen icon): leave room for the phone's notch */
+@media (display-mode: standalone) {
+  .topbar { padding-top: max(8px, env(safe-area-inset-top)); }
+}

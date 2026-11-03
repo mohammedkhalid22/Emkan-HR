@@ -12,7 +12,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - إمكان HR</title>
-    <link rel="icon" href="~/img/emkan-mark.svg" type="image/svg+xml" />
+    <partial name="_AppHead" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
@@ -166,6 +166,10 @@
                 </button>
                 <h1 class="topbar-title">@ViewData["Title"]</h1>
                 <div class="topbar-user">
+                    @* Shown only when the browser offers to install the app (site.js) *@
+                    <button type="button" id="installApp" class="btn btn-sm btn-primary d-none" title="ثبّت إمكان HR على الموبايل أو الكمبيوتر">
+                        <i class="bi bi-download"></i> <span class="d-none d-sm-inline">ثبّت التطبيق</span>
+                    </button>
                     @* The bell: the count is polled, the list loads when it opens (site.js) *@
                     <div class="dropdown notif-bell">
                         <button type="button" class="btn btn-light position-relative" id="notifButton" data-bs-toggle="dropdown" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false" aria-label="الإشعارات">

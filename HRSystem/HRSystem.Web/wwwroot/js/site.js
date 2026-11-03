@@ -41,6 +41,27 @@ document.addEventListener('click', function (e) {
     setInterval(refresh, 60000);
 })();
 
+// ---------- Install as an app (Android / desktop Chrome and Edge) ----------
+(function () {
+    const button = document.getElementById('installApp');
+    if (!button) return;
+    let offer = null;
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        offer = e;
+        button.classList.remove('d-none');
+    });
+    button.addEventListener('click', async function () {
+        if (!offer) return;
+        offer.prompt();
+        await offer.userChoice;
+        offer = null;
+        button.classList.add('d-none');
+    });
+    window.addEventListener('appinstalled', function () { button.classList.add('d-none'); });
+})();
+
 // Slow posts (AI): show a spinner and stop double submits
 document.addEventListener('submit', function (e) {
     const form = e.target.closest('form[data-busy]');
@@ -69,6 +90,53 @@ function locationError(err) {
         default: return 'المتصفح ده مش بيدعم تحديد المكان';
     }
 }
+
+// ---------- Selfie ----------
+
+// A phone photo is several MB: shrink it to 640px JPEG before it goes up
+function shrinkPhoto(file, maxSide) {
+    return new Promise(function (resolve, reject) {
+        const img = new Image();
+        img.onload = function () {
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(img.src);
+            canvas.toBlob(function (blob) {
+                blob ? resolve(new File([blob], 'selfie.jpg', { type: 'image/jpeg' })) : reject();
+            }, 'image/jpeg', 0.8);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// Check-in / check-out with a selfie: open the camera first, then let the location step below post.
+// Registered before the location handler so it runs first.
+document.addEventListener('submit', function (e) {
+    const form = e.target.closest('form[data-selfie]');
+    if (!form || form.dataset.photo) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const input = form.querySelector('input[name=selfie]');
+    input.onchange = function () {
+        const file = input.files[0];
+        if (!file) return;
+        const done = function (photo) {
+            const list = new DataTransfer();
+            list.items.add(photo);
+            input.files = list.files;
+            form.dataset.photo = '1';
+            form.requestSubmit();
+        };
+        // If the browser can't redraw it, send the original (the server still checks type and size)
+        shrinkPhoto(file, 640).then(done).catch(function () { done(file); });
+    };
+    input.click();
+});
 
 // Check-in / check-out: attach the current position before posting
 document.addEventListener('submit', function (e) {
