@@ -53,6 +53,11 @@ public class UsersController : Controller
     public async Task<IActionResult> Unlock(string id)
         => Done(await _userService.UnlockAsync(id), "الحساب اتفتح");
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetTwoFactor(string id)
+        => Done(await _userService.ResetTwoFactorAsync(id), "التحقق بخطوتين اتلغى للحساب ده. يقدر يفعّله تاني من حسابي والأمان");
+
     private IActionResult Done(ServiceResult result, string success)
     {
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? success : result.Error;

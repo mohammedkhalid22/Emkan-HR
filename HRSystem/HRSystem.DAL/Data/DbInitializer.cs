@@ -78,7 +78,8 @@ public static class DbInitializer
             ["InsuranceCompanyRate"] = ("0.1875", "نسبة حصة الشركة في التأمينات"),
             ["InsuranceMinSalary"] = ("0", "الحد الأدنى لأجر الاشتراك — يحدث كل يناير"),
             ["InsuranceMaxSalary"] = ("0", "الحد الأقصى لأجر الاشتراك — يحدث كل يناير"),
-            ["TaxPersonalExemption"] = ("0", "الإعفاء الشخصي السنوي — يراجع مع المحاسب")
+            ["TaxPersonalExemption"] = ("0", "الإعفاء الشخصي السنوي — يراجع مع المحاسب"),
+            ["RequireTwoFactorForAdmins"] = ("0", "1 = الأدمن والـ HR لازم يفعّلوا التحقق بخطوتين قبل ما يشتغلوا")
         };
 
         var existingKeys = await context.SystemSettings.Select(s => s.Key).ToListAsync();

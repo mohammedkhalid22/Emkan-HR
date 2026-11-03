@@ -53,12 +53,20 @@
                         <td>
                             @if (u.IsActive) { <span class="badge text-bg-success">مفعّل</span> } else { <span class="badge text-bg-secondary">موقوف</span> }
                             @if (u.IsLockedOut) { <span class="badge text-bg-warning">مقفول مؤقتًا</span> }
+                            @if (u.TwoFactorEnabled) { <span class="badge text-bg-info" title="التحقق بخطوتين شغال"><i class="bi bi-shield-check"></i> خطوتين</span> }
                         </td>
                         <td class="text-end text-nowrap">
                             @if (u.IsLockedOut)
                             {
                                 <form asp-action="Unlock" asp-route-id="@u.Id" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-warning" title="فتح القفل"><i class="bi bi-unlock"></i></button>
+                                </form>
+                            }
+                            @if (u.TwoFactorEnabled && !isMe)
+                            {
+                                <form asp-action="ResetTwoFactor" asp-route-id="@u.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('إلغاء التحقق بخطوتين للحساب ده؟ استخدمه بس لو صاحبه ضيّع موبايله وأكواد الاسترجاع.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="إلغاء التحقق بخطوتين (موبايل ضايع)"><i class="bi bi-shield-x"></i></button>
                                 </form>
                             }
                             @if (!isMe)

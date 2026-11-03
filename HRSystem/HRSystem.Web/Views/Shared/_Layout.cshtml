@@ -61,6 +61,9 @@
                 <a class="sidebar-link" asp-controller="Employees" asp-action="Me">
                     <i class="bi bi-person-circle"></i> ملفي
                 </a>
+                <a class="sidebar-link @ActiveAt("Account", "Security", "EnableTwoFactor")" asp-controller="Account" asp-action="Security">
+                    <i class="bi bi-shield-lock"></i> حسابي والأمان
+                </a>
 
                 <div class="sidebar-section">الإجازات</div>
                 <a class="sidebar-link @ActiveAt("LeaveRequests", "Mine", "Create")" asp-controller="LeaveRequests" asp-action="Mine">
@@ -159,7 +162,7 @@
                 <div class="topbar-user">
                     @* The bell: the count is polled, the list loads when it opens (site.js) *@
                     <div class="dropdown notif-bell">
-                        <button type="button" class="btn btn-light position-relative" id="notifButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="الإشعارات">
+                        <button type="button" class="btn btn-light position-relative" id="notifButton" data-bs-toggle="dropdown" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false" aria-label="الإشعارات">
                             <i class="bi bi-bell"></i>
                             <span class="notif-badge d-none" id="notifBadge"></span>
                         </button>
@@ -177,7 +180,7 @@
                             <a asp-controller="Notifications" asp-action="Index" class="notif-all">كل الإشعارات</a>
                         </div>
                     </div>
-                    <span class="text-muted small d-none d-sm-inline"><i class="bi bi-person-circle"></i> @User.Identity?.Name</span>
+                    <a asp-controller="Account" asp-action="Security" class="text-muted small d-none d-sm-inline text-decoration-none" title="حسابي والأمان"><i class="bi bi-person-circle"></i> @User.Identity?.Name</a>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-box-arrow-left"></i> خروج

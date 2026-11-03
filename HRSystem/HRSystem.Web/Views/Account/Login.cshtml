@@ -9,6 +9,8 @@
     <p>سجّل دخولك عشان تكمّل شغلك</p>
 </div>
 
+<partial name="_Alerts" />
+
 <form asp-action="Login" method="post" novalidate>
     <input type="hidden" asp-for="ReturnUrl" />
     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
@@ -39,7 +41,7 @@
             <input asp-for="RememberMe" class="form-check-input" />
             <label asp-for="RememberMe" class="form-check-label"></label>
         </div>
-        <span class="small text-muted" title="مفيش استرجاع تلقائي: مدير النظام بيغيّرها من شاشة المستخدمين">نسيت كلمة السر؟ كلّم مدير النظام</span>
+        <a asp-action="ForgotPassword" class="small text-decoration-none">نسيت كلمة السر؟</a>
     </div>
 
     <button type="submit" class="btn auth-submit w-100">

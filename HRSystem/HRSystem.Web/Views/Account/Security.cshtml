@@ -1,0 +1,65 @@
+@model SecurityViewModel
+@{
+    ViewData["Title"] = "حسابي والأمان";
+}
+
+<div class="row g-3" style="max-width: 1100px">
+    @* ---------- Password ---------- *@
+    <div class="col-lg-6">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-1"><i class="bi bi-key text-primary"></i> تغيير كلمة السر</h2>
+            <p class="small text-muted mb-3 ltr-value">@Model.Email</p>
+            <form asp-action="ChangePassword" method="post">
+                <div class="mb-3">
+                    <label asp-for="ChangePassword.CurrentPassword" class="form-label"></label>
+                    <input asp-for="ChangePassword.CurrentPassword" class="form-control" dir="ltr" autocomplete="current-password" />
+                    <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ChangePassword.NewPassword" class="form-label"></label>
+                    <input asp-for="ChangePassword.NewPassword" class="form-control" dir="ltr" autocomplete="new-password" />
+                    <span asp-validation-for="ChangePassword.NewPassword" class="text-danger small"></span>
+                    <div class="form-text">8 حروف على الأقل، وفيها حرف كبير وصغير ورقم.</div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ChangePassword.ConfirmPassword" class="form-label"></label>
+                    <input asp-for="ChangePassword.ConfirmPassword" class="form-control" dir="ltr" autocomplete="new-password" />
+                    <span asp-validation-for="ChangePassword.ConfirmPassword" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> غيّر كلمة السر</button>
+            </form>
+        </div>
+    </div>
+
+    @* ---------- Two-step sign-in ---------- *@
+    <div class="col-lg-6">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-1"><i class="bi bi-shield-lock text-primary"></i> التحقق بخطوتين</h2>
+            @if (Model.TwoFactorEnabled)
+            {
+                <p class="mb-3"><span class="badge text-bg-success"><i class="bi bi-check-circle"></i> شغال</span></p>
+                <p class="text-muted small">مع كل دخول من جهاز جديد هيطلب منك كود من تطبيق التحقق على موبايلك، فحتى لو حد عرف كلمة السر مش هيقدر يدخل.</p>
+                <form asp-action="DisableTwoFactor" method="post" class="row g-2 align-items-end mt-3">
+                    <div class="col">
+                        <label for="password" class="form-label small">عشان تقفله، اكتب كلمة السر</label>
+                        <input type="password" name="password" id="password" class="form-control" dir="ltr" autocomplete="current-password" required />
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-outline-danger">اقفله</button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <p class="mb-3"><span class="badge text-bg-secondary">مقفول</span></p>
+                <p class="text-muted small">بيحمي حسابك حتى لو حد عرف كلمة السر: مع الدخول هيطلب كود بيتغير كل 30 ثانية من تطبيق على موبايلك، زي Google Authenticator أو Microsoft Authenticator.</p>
+                <p class="text-muted small">مهم جداً لحسابات الأدمن والـ HR، لأنهم بيشوفوا مرتبات وبيانات كل الموظفين.</p>
+                <a asp-action="EnableTwoFactor" class="btn btn-primary"><i class="bi bi-shield-plus"></i> فعّله</a>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

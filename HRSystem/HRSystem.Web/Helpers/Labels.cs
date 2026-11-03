@@ -196,6 +196,7 @@ public static class Labels
         "InsuranceMinSalary" => "الحد الأدنى لأجر الاشتراك (0 = بدون)",
         "InsuranceMaxSalary" => "الحد الأقصى لأجر الاشتراك (0 = بدون)",
         "TaxPersonalExemption" => "الإعفاء الشخصي السنوي من الضريبة",
+        "RequireTwoFactorForAdmins" => "إلزام الأدمن والـ HR بالتحقق بخطوتين (1 = أيوه، 0 = لأ)",
         _ => key
     };
 

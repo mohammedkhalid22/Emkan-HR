@@ -1,0 +1,39 @@
+@model TwoFactorLoginViewModel
+@{
+    ViewData["Title"] = "التحقق بخطوتين";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-greeting">
+    <h2>خطوة كمان 🔐</h2>
+    <p>افتح تطبيق التحقق على موبايلك واكتب الكود اللي ظاهر</p>
+</div>
+
+<form asp-action="LoginWith2fa" method="post" novalidate>
+    <input type="hidden" asp-for="RememberMe" />
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+    <div class="mb-3">
+        <label asp-for="Code" class="form-label"></label>
+        <div class="auth-field">
+            <i class="bi bi-shield-lock"></i>
+            <input asp-for="Code" class="form-control otp-input" dir="ltr" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" autofocus />
+        </div>
+        <span asp-validation-for="Code" class="text-danger small"></span>
+        <div class="form-text">موبايلك مش معاك؟ اكتب كود من أكواد الاسترجاع اللي حفظتها.</div>
+    </div>
+
+    <div class="form-check mb-4">
+        <input asp-for="RememberMachine" class="form-check-input" />
+        <label asp-for="RememberMachine" class="form-check-label"></label>
+    </div>
+
+    <button type="submit" class="btn auth-submit w-100">تأكيد <i class="bi bi-arrow-left"></i></button>
+</form>
+
+<p class="auth-note"><a asp-action="Login">رجوع لتسجيل الدخول</a></p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

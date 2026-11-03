@@ -59,6 +59,9 @@ builder.Services
     .AddEntityFrameworkStores<HRDbContext>()
     .AddDefaultTokenProviders();
 
+// Password reset links work for two hours
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -73,6 +76,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
     options.Filters.Add(new AuthorizeFilter(policy));
+    options.Filters.Add<TwoFactorRequiredFilter>();
 });
 
 var app = builder.Build();

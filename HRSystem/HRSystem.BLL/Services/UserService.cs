@@ -16,6 +16,7 @@ public class UserDto
     public string? Role { get; set; }
     public bool IsActive { get; set; }
     public bool IsLockedOut { get; set; }
+    public bool TwoFactorEnabled { get; set; }
     public int? EmployeeId { get; set; }
     public string? EmployeeCode { get; set; }
 }
@@ -51,6 +52,9 @@ public interface IUserService
     Task<ServiceResult> SetActiveAsync(string userId, bool isActive, string? currentUserId);
     Task<ServiceResult> ResetPasswordAsync(string userId, string newPassword);
     Task<ServiceResult> UnlockAsync(string userId);
+
+    // For someone who lost the phone and the recovery codes: they set it up again after signing in
+    Task<ServiceResult> ResetTwoFactorAsync(string userId);
 }
 
 public class UserService : IUserService
@@ -83,6 +87,7 @@ public class UserService : IUserService
                 Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
                 IsActive = user.IsActive,
                 IsLockedOut = user.LockoutEnd > DateTimeOffset.UtcNow,
+                TwoFactorEnabled = user.TwoFactorEnabled,
                 EmployeeId = employee?.Id,
                 EmployeeCode = employee?.Code
             });
@@ -179,6 +184,18 @@ public class UserService : IUserService
 
         await _userManager.SetLockoutEndDateAsync(user, null);
         await _userManager.ResetAccessFailedCountAsync(user);
+        return ServiceResult.Success();
+    }
+
+    public async Task<ServiceResult> ResetTwoFactorAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+            return ServiceResult.Failure("الحساب مش موجود");
+
+        await _userManager.SetTwoFactorEnabledAsync(user, false);
+        await _userManager.ResetAuthenticatorKeyAsync(user);
+        await _userManager.UpdateSecurityStampAsync(user);
         return ServiceResult.Success();
     }
 

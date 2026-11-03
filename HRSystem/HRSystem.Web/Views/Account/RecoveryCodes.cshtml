@@ -1,0 +1,20 @@
+@model string[]
+@{
+    ViewData["Title"] = "أكواد الاسترجاع";
+}
+
+<div class="page-card" style="max-width: 640px">
+    <div class="alert alert-success"><i class="bi bi-shield-check"></i> التحقق بخطوتين اشتغل.</div>
+    <h2 class="h6 fw-bold">احفظ أكواد الاسترجاع دي دلوقتي</h2>
+    <p class="text-muted small">لو موبايلك ضاع أو اتغير، تقدر تدخل بكود منهم مكان كود التطبيق. كل كود بيشتغل مرة واحدة، و<b>مش هتظهر تاني</b>.</p>
+    <div class="tfa-codes ltr-value">
+        @foreach (var code in Model)
+        {
+            <span>@code</span>
+        }
+    </div>
+    <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> اطبعهم</button>
+        <a asp-action="Security" class="btn btn-primary">حفظتهم</a>
+    </div>
+</div>

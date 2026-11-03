@@ -567,6 +567,51 @@ body {
   border-radius: 99px;
 }
 
+/* ---------- Account security ---------- */
+
+.otp-input {
+  letter-spacing: .35em;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.tfa-steps {
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.tfa-qr {
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  line-height: 0;
+}
+
+.tfa-key {
+  margin-top: .4rem;
+  padding: .4rem .7rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  font-family: Consolas, monospace;
+  font-size: .95rem;
+  color: #0f2a4a;
+}
+
+.tfa-codes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  font-family: Consolas, monospace;
+  font-size: 1.05rem;
+  text-align: center;
+}
+
 /* ---------- Notifications ---------- */
 
 .notif-bell .btn {
@@ -591,6 +636,13 @@ body {
   line-height: 20px;
   text-align: center;
   border: 2px solid #fff;
+}
+
+/* The bell sits at the page's left edge (RTL): the list opens rightwards so it stays on screen */
+.notif-bell .notif-menu {
+  left: 0 !important;
+  right: auto !important;
+  margin-top: .4rem;
 }
 
 .notif-menu {
