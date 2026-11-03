@@ -149,6 +149,9 @@ public class SaveEmployeeDto
     [Display(Name = "الوردية")]
     public int? ShiftId { get; set; }
 
+    [Display(Name = "مسموح له يسجل حضور من أي مكان")]
+    public bool AllowRemoteAttendance { get; set; }
+
     [Display(Name = "تاريخ التعيين")]
     [Required(ErrorMessage = "{0} مطلوب")]
     public DateOnly? HireDate { get; set; }

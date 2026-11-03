@@ -11,7 +11,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - نظام الموارد البشرية</title>
+    <title>@ViewData["Title"] - إمكان HR</title>
+    <link rel="icon" href="~/img/emkan-mark.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
@@ -22,8 +23,7 @@
     <div class="app">
         <aside class="sidebar" id="sidebar">
             <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
-                <i class="bi bi-people-fill"></i>
-                <span>نظام الموارد البشرية</span>
+                <partial name="_Brand" model="32" />
             </a>
 
             <nav class="sidebar-nav">
@@ -50,6 +50,12 @@
                 {
                     <a class="sidebar-link @Active("Employees")" asp-controller="Employees" asp-action="Index">
                         <i class="bi bi-person-badge"></i> @(User.IsInRole(Roles.Manager) && !User.IsInRole(Roles.Admin) && !User.IsInRole(Roles.HR) ? "فريقي" : "الموظفين")
+                    </a>
+                }
+                @if (isAdminOrHr)
+                {
+                    <a class="sidebar-link @Active("Candidates")" asp-controller="Candidates" asp-action="Index">
+                        <i class="bi bi-person-lines-fill"></i> التوظيف <span class="badge text-bg-primary ms-auto" style="font-size: .65rem">AI</span>
                     </a>
                 }
                 <a class="sidebar-link" asp-controller="Employees" asp-action="Me">
@@ -122,6 +128,9 @@
                     </a>
 
                     <div class="sidebar-section">التقارير والإدارة</div>
+                    <a class="sidebar-link @Active("Ask")" asp-controller="Ask" asp-action="Index">
+                        <i class="bi bi-chat-dots"></i> اسأل السيستم <span class="badge text-bg-primary ms-auto" style="font-size: .65rem">AI</span>
+                    </a>
                     <a class="sidebar-link @Active("Statistics")" asp-controller="Statistics" asp-action="Index">
                         <i class="bi bi-graph-up-arrow"></i> الإحصائيات
                     </a>

@@ -89,7 +89,7 @@ public static class PayslipPdf
                 page.Footer().AlignCenter().Text(t =>
                 {
                     t.DefaultTextStyle(s => s.FontSize(7.5f).FontColor(Colors.Grey.Medium));
-                    t.Span($"اتطبع {DateTime.Now:yyyy-MM-dd HH:mm} من نظام الموارد البشرية");
+                    t.Span($"اتطبع {DateTime.Now:yyyy-MM-dd HH:mm} من إمكان HR");
                 });
             });
         }).GeneratePdf();

@@ -29,6 +29,7 @@
                         <th>اسم الفرع</th>
                         <th>العنوان</th>
                         <th>عدد الأقسام</th>
+                        <th>موقع الحضور</th>
                         @if (canEdit) { <th class="text-end">إجراءات</th> }
                     </tr>
                 </thead>
@@ -39,6 +40,19 @@
                             <td class="fw-semibold">@branch.Name</td>
                             <td>@(branch.Address ?? "—")</td>
                             <td>@branch.DepartmentsCount</td>
+                            <td>
+                                @if (branch.Latitude is double lat && branch.Longitude is double lng)
+                                {
+                                    <a href="https://www.google.com/maps?q=@lat.ToString(System.Globalization.CultureInfo.InvariantCulture),@lng.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                       target="_blank" rel="noopener" class="text-decoration-none">
+                                        <i class="bi bi-geo-alt-fill text-success"></i> محدد · @branch.AttendanceRadiusMeters متر
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">من غير قيد</span>
+                                }
+                            </td>
                             @if (canEdit)
                             {
                                 <td class="text-end text-nowrap">

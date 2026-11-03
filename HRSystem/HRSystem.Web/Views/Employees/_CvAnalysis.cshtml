@@ -1,0 +1,63 @@
+﻿@model (int EmployeeId, string JobTitleName, CvAnalysisPanelDto Panel)
+@{
+    var panel = Model.Panel;
+    var a = panel.Latest;
+}
+
+@if (!panel.IsAvailable)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-plug"></i> خدمة الذكاء الاصطناعي مش متظبطة لسه. حط مفتاح Gemini في ملف
+        <code>appsettings.Local.json</code> جنب البرنامج وأعد تشغيله.
+    </div>
+}
+
+@if (!panel.JobHasRequirements)
+{
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-2">
+        <i class="bi bi-info-circle"></i>
+        <span class="flex-grow-1">مسمى "@Model.JobTitleName" مفيهوش متطلبات مكتوبة، فنسبة التوافق هتبقى تقديرية. اكتب المتطلبات عشان النتيجة تبقى على مقاس شركتك.</span>
+        <a asp-controller="JobTitles" asp-action="Edit" asp-route-id="@panel.JobTitleId" class="btn btn-sm btn-outline-primary">اكتب المتطلبات</a>
+    </div>
+}
+
+@* ---------- Analyse ---------- *@
+<form asp-action="AnalyzeCv" asp-route-id="@Model.EmployeeId" method="post" enctype="multipart/form-data"
+      class="cv-run row g-2 align-items-end mb-4" data-busy="بيحلل الـ CV... ممكن ياخد لحد دقيقة">
+    <div class="col-md-5">
+        <label class="form-label small" for="documentId">CV من مستندات الموظف</label>
+        <select name="documentId" id="documentId" class="form-select" disabled="@(panel.Documents.Count == 0)">
+            <option value="">@(panel.Documents.Count == 0 ? "مفيش مستندات مرفوعة" : "— اختار —")</option>
+            @{
+                // The newest CV is picked by default; other documents only if chosen by hand
+                var defaultCv = panel.Documents.FirstOrDefault(d => d.Name.StartsWith(HRSystem.BLL.Services.EmployeeDocumentService.CvDocumentType));
+            }
+            @foreach (var d in panel.Documents)
+            {
+                <option value="@d.Id" selected="@(d == defaultCv)">@d.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label small" for="cvFile">أو ارفع CV جديد (PDF أو صورة)</label>
+        <input type="file" name="file" id="cvFile" accept=".pdf,.jpg,.jpeg,.png" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100" disabled="@(!panel.IsAvailable)">
+            <i class="bi bi-stars"></i> @(a is null ? "حلّل الـ CV" : "حلّل تاني")
+        </button>
+    </div>
+    <div class="col-12 form-text">
+        <i class="bi bi-shield-lock"></i> الملف بيتبعت لخدمة Google Gemini عشان يتحلل. في الخطة المجانية Google ممكن تستخدم البيانات في تحسين خدماتها.
+    </div>
+</form>
+
+@* ---------- Result ---------- *@
+@if (a is null)
+{
+    <div class="empty-state"><i class="bi bi-file-earmark-person"></i> لسه محدش حلل الـ CV بتاع الموظف ده</div>
+}
+else
+{
+    <partial name="_CvResult" model="a" />
+}

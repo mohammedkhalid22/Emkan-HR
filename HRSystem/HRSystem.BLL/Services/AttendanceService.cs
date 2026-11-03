@@ -11,8 +11,9 @@ namespace HRSystem.BLL.Services;
 public interface IAttendanceService
 {
     Task<TodayAttendanceDto> GetTodayAsync(int employeeId);
-    Task<ServiceResult> CheckInAsync(int employeeId);
-    Task<ServiceResult> CheckOutAsync(int employeeId);
+    // location = where the browser says the employee is; locationError = why it couldn't tell
+    Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null);
+    Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null);
 
     Task<PagedResult<AttendanceRecordDto>> GetRecordsAsync(AttendanceFilterDto filter, EmployeeAccessScope scope);
     Task<ManualAttendanceDto?> GetForEditAsync(int employeeId, DateOnly date);
@@ -83,7 +84,7 @@ public class AttendanceService : IAttendanceService
         };
     }
 
-    public async Task<ServiceResult> CheckInAsync(int employeeId)
+    public async Task<ServiceResult> CheckInAsync(int employeeId, GeoPoint? location = null, string? locationError = null)
     {
         var employee = await _unitOfWork.Repository<Employee>().QueryNoTracking().FirstOrDefaultAsync(e => e.Id == employeeId);
         if (employee is null || employee.Status != EmployeeStatus.Active)
@@ -92,6 +93,10 @@ public class AttendanceService : IAttendanceService
         var record = await _records.Query().FirstOrDefaultAsync(r => r.EmployeeId == employeeId && r.Date == Today);
         if (record?.CheckIn is not null)
             return ServiceResult.Failure($"إنت مسجل حضور النهارده الساعة {record.CheckIn:HH:mm}");
+
+        var place = await CheckLocationAsync(employeeId, location, locationError, "حضور");
+        if (!place.Result.Succeeded)
+            return place.Result;
 
         if (record is null)
         {
@@ -102,12 +107,15 @@ public class AttendanceService : IAttendanceService
         record.CheckIn = Now;
         record.Status = AttendanceStatus.Present;
         record.Source = AttendanceSource.Web;
+        record.CheckInLatitude = location?.Latitude;
+        record.CheckInLongitude = location?.Longitude;
+        record.CheckInDistanceMeters = place.DistanceMeters;
         await ComputeAsync(record, employee.ShiftId);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
 
-    public async Task<ServiceResult> CheckOutAsync(int employeeId)
+    public async Task<ServiceResult> CheckOutAsync(int employeeId, GeoPoint? location = null, string? locationError = null)
     {
         var record = await _records.Query().Include(r => r.Employee)
             .FirstOrDefaultAsync(r => r.EmployeeId == employeeId && r.Date == Today);
@@ -120,10 +128,62 @@ public class AttendanceService : IAttendanceService
         if (now <= record.CheckIn)
             return ServiceResult.Failure("وقت الانصراف لازم يكون بعد وقت الحضور");
 
+        var place = await CheckLocationAsync(employeeId, location, locationError, "انصراف");
+        if (!place.Result.Succeeded)
+            return place.Result;
+
         record.CheckOut = now;
+        record.CheckOutLatitude = location?.Latitude;
+        record.CheckOutLongitude = location?.Longitude;
+        record.CheckOutDistanceMeters = place.DistanceMeters;
         await ComputeAsync(record, record.Employee.ShiftId);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
+    }
+
+    // The branch (through the department) decides whether and where the employee may check in.
+    // Returns how far the employee is from the branch, when both locations are known.
+    private async Task<(ServiceResult Result, int? DistanceMeters)> CheckLocationAsync(
+        int employeeId, GeoPoint? location, string? locationError, string action)
+    {
+        if (location is not null && !GeoCalculator.IsValid(location))
+            return (ServiceResult.Failure("الموقع اللي وصل من الموبايل مش صحيح. جرّب تاني"), null);
+
+        var info = await _unitOfWork.Repository<Employee>().QueryNoTracking()
+            .Where(e => e.Id == employeeId)
+            .Select(e => new
+            {
+                e.AllowRemoteAttendance,
+                BranchName = e.Department.Branch!.Name,
+                Latitude = e.Department.Branch!.Latitude,
+                Longitude = e.Department.Branch!.Longitude,
+                Radius = (int?)e.Department.Branch!.AttendanceRadiusMeters
+            })
+            .FirstAsync();
+
+        if (info.Latitude is not double branchLat || info.Longitude is not double branchLng)
+            return (ServiceResult.Success(), null);
+
+        int? distance = location is null
+            ? null
+            : (int)Math.Round(GeoCalculator.DistanceMeters(location.Latitude, location.Longitude, branchLat, branchLng));
+
+        if (info.AllowRemoteAttendance)
+            return (ServiceResult.Success(), distance);
+
+        if (location is null)
+            return (ServiceResult.Failure(
+                $"لازم نعرف مكانك عشان تسجل {action}. {locationError ?? "اسمح للبرنامج يعرف مكانك وجرّب تاني"}"), null);
+
+        var radius = info.Radius ?? 200;
+        return GeoCalculator.Check(location, branchLat, branchLng, radius) switch
+        {
+            LocationCheck.TooInaccurate => (ServiceResult.Failure(
+                $"مكانك مش واضح (الدقة حوالي {location.AccuracyMeters:0} متر). شغّل الـ GPS أو اطلع جنب شباك وجرّب تاني"), distance),
+            LocationCheck.OutsideBranch => (ServiceResult.Failure(
+                $"إنت بعيد عن «{info.BranchName}» بحوالي {distance} متر، والمسموح {radius} متر. لازم تكون في الفرع عشان تسجل {action}"), distance),
+            _ => (ServiceResult.Success(), distance)
+        };
     }
 
     // ---------- Records ----------
@@ -173,7 +233,14 @@ public class AttendanceService : IAttendanceService
                 OvertimeMinutes = r.OvertimeMinutes,
                 Status = r.Status,
                 Source = r.Source,
-                Notes = r.Notes
+                Notes = r.Notes,
+                CheckInLatitude = r.CheckInLatitude,
+                CheckInLongitude = r.CheckInLongitude,
+                CheckInDistanceMeters = r.CheckInDistanceMeters,
+                CheckOutLatitude = r.CheckOutLatitude,
+                CheckOutLongitude = r.CheckOutLongitude,
+                CheckOutDistanceMeters = r.CheckOutDistanceMeters,
+                BranchRadiusMeters = (int?)r.Employee.Department.Branch!.AttendanceRadiusMeters
             })
             .ToListAsync();
 

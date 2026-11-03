@@ -19,6 +19,9 @@ public class EmployeeFormViewModel : SaveEmployeeDto
     public string? Code { get; set; }
     public bool HasPhoto { get; set; }
 
+    // Set when hiring from recruitment: the candidate's CV and analysis move to the new employee
+    public int? CandidateId { get; set; }
+
     [Display(Name = "الصورة الشخصية")]
     public IFormFile? Photo { get; set; }
 
@@ -43,4 +46,5 @@ public class EmployeeProfileViewModel
 
     // Filled for HR only
     public EmployeeSalaryViewModel? Salary { get; set; }
+    public CvAnalysisPanelDto? Cv { get; set; }
 }

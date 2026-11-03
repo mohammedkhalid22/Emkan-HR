@@ -36,7 +36,8 @@ public class JobTitleService : IJobTitleService
                 Name = j.Name,
                 MinSalary = j.MinSalary,
                 MaxSalary = j.MaxSalary,
-                EmployeesCount = j.Employees.Count
+                EmployeesCount = j.Employees.Count,
+                HasRequirements = j.Requirements != null && j.Requirements != ""
             })
             .ToListAsync();
 
@@ -48,7 +49,8 @@ public class JobTitleService : IJobTitleService
                 Id = j.Id,
                 Name = j.Name,
                 MinSalary = j.MinSalary,
-                MaxSalary = j.MaxSalary
+                MaxSalary = j.MaxSalary,
+                Requirements = j.Requirements
             })
             .FirstOrDefaultAsync();
 
@@ -68,7 +70,8 @@ public class JobTitleService : IJobTitleService
         {
             Name = dto.Name.Trim(),
             MinSalary = dto.MinSalary,
-            MaxSalary = dto.MaxSalary
+            MaxSalary = dto.MaxSalary,
+            Requirements = Clean(dto.Requirements)
         });
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
@@ -87,6 +90,7 @@ public class JobTitleService : IJobTitleService
         jobTitle.Name = dto.Name.Trim();
         jobTitle.MinSalary = dto.MinSalary;
         jobTitle.MaxSalary = dto.MaxSalary;
+        jobTitle.Requirements = Clean(dto.Requirements);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
@@ -105,6 +109,8 @@ public class JobTitleService : IJobTitleService
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
+
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     private async Task<ServiceResult> ValidateAsync(SaveJobTitleDto dto)
     {

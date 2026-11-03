@@ -10,14 +10,17 @@ public record DocumentFile(Stream Content, string FileName, string ContentType);
 
 public interface IEmployeeDocumentService
 {
-    Task<ServiceResult> UploadAsync(UploadDocumentDto dto, FileUpload file);
+    // Returns the new document id
+    Task<ServiceResult<int>> UploadAsync(UploadDocumentDto dto, FileUpload file);
     Task<DocumentFile?> OpenAsync(int documentId, EmployeeAccessScope scope);
     Task<ServiceResult<int>> DeleteAsync(int documentId);
 }
 
 public class EmployeeDocumentService : IEmployeeDocumentService
 {
-    public static readonly string[] DocumentTypes = ["بطاقة الرقم القومي", "شهادة المؤهل", "عقد العمل", "شهادة الميلاد", "صحيفة الحالة الجنائية", "شهادة التجنيد", "أخرى"];
+    public const string CvDocumentType = "السيرة الذاتية (CV)";
+
+    public static readonly string[] DocumentTypes = [CvDocumentType, "بطاقة الرقم القومي", "شهادة المؤهل", "عقد العمل", "شهادة الميلاد", "صحيفة الحالة الجنائية", "شهادة التجنيد", "أخرى"];
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IGenericRepository<EmployeeDocument> _documents;
@@ -30,24 +33,25 @@ public class EmployeeDocumentService : IEmployeeDocumentService
         _fileStorage = fileStorage;
     }
 
-    public async Task<ServiceResult> UploadAsync(UploadDocumentDto dto, FileUpload file)
+    public async Task<ServiceResult<int>> UploadAsync(UploadDocumentDto dto, FileUpload file)
     {
         if (!await _unitOfWork.Repository<Employee>().QueryNoTracking().AnyAsync(e => e.Id == dto.EmployeeId))
-            return ServiceResult.Failure("الموظف مش موجود");
+            return ServiceResult<int>.Failure("الموظف مش موجود");
 
         if (FileRules.Validate(file, FileRules.DocumentExtensions) is string error)
-            return ServiceResult.Failure(error);
+            return ServiceResult<int>.Failure(error);
 
         var path = await _fileStorage.SaveAsync(file, $"employees/{dto.EmployeeId}/documents");
-        await _documents.AddAsync(new EmployeeDocument
+        var document = new EmployeeDocument
         {
             EmployeeId = dto.EmployeeId,
             DocumentType = dto.DocumentType.Trim(),
             ExpiryDate = dto.ExpiryDate,
             FilePath = path
-        });
+        };
+        await _documents.AddAsync(document);
         await _unitOfWork.SaveChangesAsync();
-        return ServiceResult.Success();
+        return ServiceResult<int>.Success(document.Id);
     }
 
     public async Task<DocumentFile?> OpenAsync(int documentId, EmployeeAccessScope scope)

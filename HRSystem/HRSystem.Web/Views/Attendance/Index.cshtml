@@ -6,6 +6,25 @@
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
+@* Where the employee checked in/out from the app: red when outside the branch radius (remote staff) *@
+@functions {
+    private static string Coord(double value) => value.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture);
+}
+@{
+    void GeoPin(double? lat, double? lng, int? distance, int? radius)
+    {
+        if (lat is not double la || lng is not double lo)
+            return;
+
+        var outside = distance is int d && radius is int r && d > r;
+        var title = distance is int m ? $"على بعد {m} متر من الفرع" : "مكان التسجيل";
+        <a href="https://www.google.com/maps?q=@Coord(la),@Coord(lo)" target="_blank" rel="noopener"
+           class="text-decoration-none @(outside ? "text-danger" : "text-success")" title="@title">
+            <i class="bi bi-geo-alt-fill"></i>@if (outside) { <small>@distance م</small> }
+        </a>
+    }
+}
+
 @if (Model.Today is not null)
 {
     <partial name="_CheckInCard" model="Model.Today" />
@@ -93,8 +112,8 @@
                             }
                             <td class="text-nowrap">@r.Date.ToString("yyyy-MM-dd")</td>
                             <td><span class="badge @Labels.StatusBadge(r.Status)">@Labels.Of(r.Status)</span></td>
-                            <td>@Labels.Time(r.CheckIn)</td>
-                            <td>@Labels.Time(r.CheckOut)</td>
+                            <td class="text-nowrap">@Labels.Time(r.CheckIn) @{ GeoPin(r.CheckInLatitude, r.CheckInLongitude, r.CheckInDistanceMeters, r.BranchRadiusMeters); }</td>
+                            <td class="text-nowrap">@Labels.Time(r.CheckOut) @{ GeoPin(r.CheckOutLatitude, r.CheckOutLongitude, r.CheckOutDistanceMeters, r.BranchRadiusMeters); }</td>
                             <td class="@(r.LateMinutes > 0 ? "text-danger fw-semibold" : "")">@Labels.Minutes(r.LateMinutes)</td>
                             <td class="@(r.EarlyLeaveMinutes > 0 ? "text-danger" : "")">@Labels.Minutes(r.EarlyLeaveMinutes)</td>
                             <td class="@(r.OvertimeMinutes > 0 ? "text-success fw-semibold" : "")">@Labels.Minutes(r.OvertimeMinutes)</td>

@@ -7,6 +7,11 @@ public class Branch : BaseEntity
     public string Name { get; set; } = null!;
     public string? Address { get; set; }
 
+    // Where employees of this branch may check in from the app; no location = no check
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int AttendanceRadiusMeters { get; set; } = 200;
+
     public ICollection<Department> Departments { get; set; } = new List<Department>();
 }
 
@@ -32,6 +37,9 @@ public class JobTitle : BaseEntity
     public string Name { get; set; } = null!;
     public decimal? MinSalary { get; set; }
     public decimal? MaxSalary { get; set; }
+
+    // What the job needs (skills, years, education); the AI scores CVs against it
+    public string? Requirements { get; set; }
 
     public ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

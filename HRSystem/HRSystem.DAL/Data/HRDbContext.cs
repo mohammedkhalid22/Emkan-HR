@@ -29,6 +29,8 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<EmployeeDocument> EmployeeDocuments => Set<EmployeeDocument>();
     public DbSet<EmployeeHistory> EmployeeHistory => Set<EmployeeHistory>();
+    public DbSet<CvAnalysis> CvAnalyses => Set<CvAnalysis>();
+    public DbSet<Candidate> Candidates => Set<Candidate>();
 
     // Leaves
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();

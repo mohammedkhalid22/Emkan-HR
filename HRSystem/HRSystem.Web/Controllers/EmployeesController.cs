@@ -1,4 +1,4 @@
-using HRSystem.BLL.DTOs;
+﻿using HRSystem.BLL.DTOs;
 using HRSystem.BLL.Services;
 using HRSystem.Domain.Identity;
 using HRSystem.Web.Extensions;
@@ -20,6 +20,9 @@ public class EmployeesController : Controller
     private readonly IFileStorage _fileStorage;
     private readonly ISalaryComponentService _componentService;
     private readonly ILoanService _loanService;
+    private readonly ICvAnalysisService _cvService;
+    private readonly IEmployeeDocumentService _documentService;
+    private readonly ICandidateService _candidateService;
 
     public EmployeesController(
         IEmployeeService employeeService,
@@ -28,8 +31,14 @@ public class EmployeesController : Controller
         IJobTitleService jobTitleService,
         IFileStorage fileStorage,
         ISalaryComponentService componentService,
-        ILoanService loanService)
+        ILoanService loanService,
+        ICvAnalysisService cvService,
+        IEmployeeDocumentService documentService,
+        ICandidateService candidateService)
     {
+        _candidateService = candidateService;
+        _cvService = cvService;
+        _documentService = documentService;
         _employeeService = employeeService;
         _accountService = accountService;
         _departmentService = departmentService;
@@ -107,8 +116,82 @@ public class EmployeesController : Controller
                 Loans = await _loanService.GetForEmployeeAsync(id),
                 AvailableComponents = new SelectList(await _componentService.GetLookupAsync(), "Id", "Name")
             };
+            model.Cv = await _cvService.GetPanelAsync(id);
         }
         return View(model);
+    }
+
+    // ---------- AI: CV ----------
+
+    [Authorize(Roles = Roles.AdminOrHR)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AnalyzeCv(int id, int? documentId, IFormFile? file)
+    {
+        // A new file is saved as the employee's CV first, then analysed
+        if (file is not null)
+        {
+            var upload = await _documentService.UploadAsync(
+                new UploadDocumentDto { EmployeeId = id, DocumentType = EmployeeDocumentService.CvDocumentType }, file.ToFileUpload()!);
+            if (!upload.Succeeded)
+            {
+                TempData["Error"] = upload.Error;
+                return RedirectToAction(nameof(Details), null, new { id }, "cv");
+            }
+            documentId = upload.Value;
+        }
+
+        var result = documentId is int docId
+            ? await _cvService.AnalyzeAsync(id, docId)
+            : ServiceResult.Failure("اختار ملف الـ CV أو ارفع واحد جديد");
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "الـ CV اتحلل" : result.Error;
+        return RedirectToAction(nameof(Details), null, new { id }, "cv");
+    }
+
+    // Reads a CV and returns the new employee form filled with what it found
+    [Authorize(Roles = Roles.AdminOrHR)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> FillFromCv(IFormFile? cvFile)
+    {
+        var model = new EmployeeFormViewModel
+        {
+            HireDate = DateOnly.FromDateTime(DateTime.Today),
+            ContractType = Domain.Enums.ContractType.Permanent
+        };
+
+        var upload = cvFile.ToFileUpload();
+        var result = upload is null
+            ? ServiceResult<CvProfile>.Failure("اختار ملف الـ CV الأول")
+            : await _cvService.ReadProfileAsync(upload);
+
+        if (result.Succeeded && result.Value is { } cv)
+        {
+            model.FullNameAr = cv.FullNameAr!;
+            model.FullNameEn = cv.FullNameEn;
+            model.Email = cv.Email;
+            model.Phone = cv.Phone;
+            model.Address = cv.Address;
+            model.BirthDate = cv.BirthDate;
+            model.Gender = cv.Gender;
+            model.MaritalStatus = cv.MaritalStatus;
+
+            var found = new[] { cv.FullNameAr ?? cv.FullNameEn, cv.Email, cv.Phone, cv.Address, cv.BirthDate?.ToString(), cv.Gender?.ToString() }
+                .Count(v => v is not null);
+            ViewData["CvNote"] = found == 0
+                ? "ملقيناش بيانات شخصية واضحة في الـ CV ده. كمّل البيانات بإيدك"
+                : $"اتملت {found} خانات من الـ CV. راجعها وكمّل الباقي (الرقم القومي والوظيفة والمرتب). مش هيتحفظ حاجة غير لما تدوس حفظ";
+        }
+        else
+        {
+            TempData["Error"] = result.Error;
+            return RedirectToAction(nameof(Create));
+        }
+
+        // The model is built here, not bound from the form, so don't show validation errors yet
+        ModelState.Clear();
+        await FillListsAsync(model);
+        return View(nameof(Create), model);
     }
 
     public async Task<IActionResult> Photo(int id)
@@ -120,13 +203,30 @@ public class EmployeesController : Controller
     }
 
     [Authorize(Roles = Roles.AdminOrHR)]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? candidateId)
     {
         var model = new EmployeeFormViewModel
         {
             HireDate = DateOnly.FromDateTime(DateTime.Today),
             ContractType = Domain.Enums.ContractType.Permanent
         };
+
+        // Hiring from recruitment: start from what the AI read in the CV
+        if (candidateId is int id && await _candidateService.GetForHireAsync(id) is { } candidate)
+        {
+            model.CandidateId = candidate.CandidateId;
+            model.JobTitleId = candidate.JobTitleId;
+            model.FullNameAr = candidate.FullNameAr!;
+            model.FullNameEn = candidate.FullNameEn;
+            model.Email = candidate.Email;
+            model.Phone = candidate.Phone;
+            model.Address = candidate.Address;
+            model.BirthDate = candidate.BirthDate;
+            model.Gender = candidate.Gender;
+            model.MaritalStatus = candidate.MaritalStatus;
+            ViewData["CvNote"] = "البيانات جاية من الـ CV بتاع المتقدم. كمّل الرقم القومي والقسم والمرتب واحفظ، والـ CV والتحليل هيتنقلوا لملفه";
+        }
+
         await FillListsAsync(model);
         return View(model);
     }
@@ -141,6 +241,8 @@ public class EmployeesController : Controller
             var result = await _employeeService.CreateAsync(model, model.Photo.ToFileUpload());
             if (result.Succeeded)
             {
+                if (model.CandidateId is int candidateId)
+                    await _candidateService.CompleteHireAsync(candidateId, result.Value);
                 TempData["Success"] = "الموظف اتضاف";
                 return RedirectToAction(nameof(Details), new { id = result.Value });
             }

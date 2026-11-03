@@ -1,0 +1,171 @@
+@model CandidateIndexViewModel
+@{
+    ViewData["Title"] = "التوظيف";
+    var f = Model.Filter;
+    var pending = Model.Items.Where(i => !i.IsAnalyzed && i.AnalysisError is null && i.Status != CandidateStatus.Hired).Select(i => i.Id).ToList();
+    var rank = 0;
+}
+
+@if (!Model.IsAvailable)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-plug"></i> خدمة الذكاء الاصطناعي مش متظبطة. حط مفتاح Gemini في <code>appsettings.Local.json</code> عشان الـ CVs تتحلل.
+    </div>
+}
+
+@* ---------- Upload ---------- *@
+<div class="page-card cv-fill mb-3">
+    <form asp-action="Upload" method="post" enctype="multipart/form-data" class="row g-2 align-items-end" data-busy="بيرفع الملفات...">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small" for="jobTitleId">الوظيفة</label>
+            <select name="jobTitleId" id="jobTitleId" asp-items="Model.JobTitles" class="form-select" required>
+                <option value="">— اختار —</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label fw-semibold small" for="files"><i class="bi bi-stars text-primary"></i> ملفات الـ CV (PDF أو صور، لحد @HRSystem.BLL.Services.CandidateService.MaxFilesPerUpload ملف)</label>
+            <input type="file" name="files" id="files" accept=".pdf,.jpg,.jpeg,.png" class="form-control" multiple required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> ارفع وحلّل</button>
+        </div>
+        <div class="col-12 form-text">
+            الذكاء الاصطناعي بيقارن كل CV بـ <a asp-controller="JobTitles" asp-action="Index">متطلبات الوظيفة</a> ويرتبهم من الأنسب للأقل.
+            الملفات بتتبعت لخدمة Google Gemini عشان تتحلل.
+        </div>
+    </form>
+</div>
+
+<div class="page-card">
+    @* ---------- Filters ---------- *@
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label class="form-label small text-muted" for="JobTitleId">الوظيفة</label>
+            <select name="JobTitleId" id="JobTitleId" asp-items="Model.JobTitles" class="form-select">
+                <option value="">كل الوظايف</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted" for="Status">الحالة</label>
+            <select name="Status" id="Status" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var status in Enum.GetValues<CandidateStatus>())
+                {
+                    <option value="@status" selected="@(f.Status == status)">@Labels.Of(status)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> عرض</button>
+            <a asp-action="Index" class="btn btn-light">مسح</a>
+        </div>
+    </form>
+
+    @if (f.JobTitleId is int jobId && Model.JobsWithoutRequirements.Contains(jobId))
+    {
+        <div class="alert alert-info py-2">
+            <i class="bi bi-info-circle"></i> الوظيفة دي مفيهاش متطلبات مكتوبة، فالنسب تقديرية.
+            <a asp-controller="JobTitles" asp-action="Edit" asp-route-id="@jobId">اكتب المتطلبات</a>
+        </div>
+    }
+
+    <div class="page-toolbar">
+        <span class="text-muted">@Model.Items.Count متقدم · مترتبين من الأنسب</span>
+        <span id="analyze-progress" class="small text-primary"></span>
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-person-lines-fill"></i> لسه مفيش متقدمين. ارفع الـ CVs من فوق</div>
+    }
+    else
+    {
+        @Html.AntiForgeryToken()
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المتقدم</th>
+                        <th style="min-width: 170px">التوافق</th>
+                        <th>الخبرة</th>
+                        <th>الملخص</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Items)
+                    {
+                        <tr data-candidate="@c.Id">
+                            <td class="text-muted">@(c.MatchPercent is null ? "—" : (++rank).ToString())</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@c.Id" class="fw-semibold text-decoration-none" dir="auto">@c.Name</a>
+                                <div class="small text-muted">@c.JobTitleName</div>
+                            </td>
+                            <td class="match-cell">
+                                @if (c.MatchPercent is int pct)
+                                {
+                                    var tone = Labels.MatchTone(pct);
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-bold" style="color: @tone; min-width: 2.6rem">@pct%</span>
+                                        <div class="match-bar flex-grow-1"><span style="width: @pct%; background: @tone"></span></div>
+                                    </div>
+                                }
+                                else if (c.AnalysisError is not null)
+                                {
+                                    <span class="text-danger small" title="@c.AnalysisError"><i class="bi bi-exclamation-triangle"></i> ماتحللش</span>
+                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-retry="@c.Id">جرّب تاني</button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small"><span class="spinner-border spinner-border-sm"></span> بيتحلل…</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">@(c.ExperienceYears is decimal y ? $"{y:0.#} سنة" : "—")</td>
+                            <td class="small text-muted" style="max-width: 420px">@Short(c.Summary)</td>
+                            <td><span class="badge @Labels.StatusBadge(c.Status)">@Labels.Of(c.Status)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@functions {
+    private static string Short(string? text) => text is null ? "" : text.Length > 140 ? text[..140] + "…" : text;
+}
+
+@section Scripts {
+    <script>
+        // Analyse the new CVs one by one (each request stays short), then reload to re-rank
+        (function () {
+            const pending = @Json.Serialize(pending);
+            const token = document.querySelector('input[name=__RequestVerificationToken]')?.value;
+            const progress = document.getElementById('analyze-progress');
+
+            async function analyze(id) {
+                const body = new FormData();
+                body.append('__RequestVerificationToken', token);
+                const res = await fetch('@Url.Action("Analyze")/' + id, { method: 'POST', body });
+                return res.ok ? res.json() : { ok: false };
+            }
+
+            async function run(ids) {
+                for (let i = 0; i < ids.length; i++) {
+                    progress.innerHTML = '<span class="spinner-border spinner-border-sm"></span> بيحلل ' + (i + 1) + ' من ' + ids.length;
+                    await analyze(ids[i]);
+                }
+                progress.textContent = 'خلص التحليل، بيرتب…';
+                location.reload();
+            }
+
+            if (pending.length) run(pending);
+
+            document.addEventListener('click', function (e) {
+                const retry = e.target.closest('[data-retry]');
+                if (retry) { retry.disabled = true; run([retry.dataset.retry]); }
+            });
+        })();
+    </script>
+}

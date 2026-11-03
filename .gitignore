@@ -16,8 +16,14 @@ HRSystem/HRSystem.Web/App_Data/
 # Local tool settings
 .claude/
 
+# Per-machine secrets (AI API key)
+appsettings.Local.json
+
 # Personal notes that may hold passwords
 info login.txt
 
 # Packaged builds for testers
 Publish/
+
+# Client demo deck and demo account passwords (kept out of the repo)
+Demo/

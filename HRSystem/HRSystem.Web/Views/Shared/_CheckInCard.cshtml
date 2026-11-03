@@ -22,15 +22,17 @@
     </div>
     @if (Model.CheckIn is null)
     {
-        <form asp-controller="Attendance" asp-action="CheckIn" method="post">
+        <form asp-controller="Attendance" asp-action="CheckIn" method="post" data-geo>
             <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <partial name="_GeoFields" />
             <button type="submit" class="btn btn-success"><i class="bi bi-box-arrow-in-left"></i> تسجيل حضور</button>
         </form>
     }
     else if (Model.CheckOut is null)
     {
-        <form asp-controller="Attendance" asp-action="CheckOut" method="post">
+        <form asp-controller="Attendance" asp-action="CheckOut" method="post" data-geo>
             <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <partial name="_GeoFields" />
             <button type="submit" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> تسجيل انصراف</button>
         </form>
     }

@@ -24,6 +24,14 @@
             </div>
         </div>
 
+        <div class="mb-4">
+            <label asp-for="Requirements" class="form-label"></label>
+            <textarea asp-for="Requirements" class="form-control" rows="6"
+                      placeholder="مثال:&#10;- بكالوريوس تجارة شعبة محاسبة&#10;- خبرة 3 سنين على الأقل في الحسابات العامة&#10;- إجادة Excel وبرنامج محاسبي&#10;- إنجليزي كويس"></textarea>
+            <div class="form-text"><i class="bi bi-stars"></i> الذكاء الاصطناعي بيقارن الـ CV بالمتطلبات دي ويحسب نسبة التوافق. كل ما تكتبها بالتفصيل النتيجة تبقى أدق.</div>
+            <span asp-validation-for="Requirements" class="text-danger"></span>
+        </div>
+
         <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
         <a asp-action="Index" class="btn btn-light">إلغاء</a>
     </form>

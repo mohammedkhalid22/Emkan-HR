@@ -46,6 +46,10 @@
     <ul class="nav nav-tabs mb-4" role="tablist" id="profileTabs">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info" type="button">البيانات</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">المستندات <span class="badge text-bg-light">@e.Documents.Count</span></button></li>
+        @if (Model.Cv is not null)
+        {
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cv" type="button"><i class="bi bi-stars text-primary"></i> تحليل الـ CV</button></li>
+        }
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history" type="button">السجل الوظيفي</button></li>
         @if (Model.Salary is not null)
         {
@@ -180,6 +184,14 @@
                 </div>
             }
         </div>
+
+        @* ---------- CV analysis (HR) ---------- *@
+        @if (Model.Cv is { } cv)
+        {
+            <div class="tab-pane fade" id="cv">
+                <partial name="_CvAnalysis" model="(e.Id, e.JobTitleName, cv)" />
+            </div>
+        }
 
         @* ---------- History ---------- *@
         <div class="tab-pane fade" id="history">

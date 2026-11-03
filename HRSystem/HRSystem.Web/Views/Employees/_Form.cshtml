@@ -1,7 +1,10 @@
 @model EmployeeFormViewModel
 
-<form method="post" enctype="multipart/form-data" id="employeeForm">
+@* The action is explicit: after "fill from CV" the page is served from another URL *@
+<form method="post" enctype="multipart/form-data" id="employeeForm"
+      asp-action="@(Model.Id == 0 ? "Create" : "Edit")" asp-route-id="@(Model.Id == 0 ? null : Model.Id)">
     <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CandidateId" />
     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
 
     <div class="page-card">
@@ -123,6 +126,11 @@
                             <option value="">— بدون —</option>
                         </select>
                         <span asp-validation-for="ShiftId" class="text-danger"></span>
+                        <div class="form-check mt-2">
+                            <input asp-for="AllowRemoteAttendance" class="form-check-input" />
+                            <label asp-for="AllowRemoteAttendance" class="form-check-label"></label>
+                        </div>
+                        <div class="form-text">للمناديب وشغل البيت. مكانه هيتسجل برضه.</div>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="HireDate" class="form-label"></label>

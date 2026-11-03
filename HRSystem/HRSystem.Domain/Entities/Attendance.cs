@@ -27,6 +27,14 @@ public class AttendanceRecord : BaseEntity
     public AttendanceStatus Status { get; set; }
     public AttendanceSource Source { get; set; }
 
+    // Where the employee was when checking in/out from the app, and how far from the branch
+    public double? CheckInLatitude { get; set; }
+    public double? CheckInLongitude { get; set; }
+    public int? CheckInDistanceMeters { get; set; }
+    public double? CheckOutLatitude { get; set; }
+    public double? CheckOutLongitude { get; set; }
+    public int? CheckOutDistanceMeters { get; set; }
+
     // Why HR edited the record by hand
     public string? Notes { get; set; }
 }

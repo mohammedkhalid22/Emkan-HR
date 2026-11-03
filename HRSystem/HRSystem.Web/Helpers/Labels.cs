@@ -47,6 +47,30 @@ public static class Labels
         _ => "text-bg-secondary"
     };
 
+    public static string Of(CandidateStatus value) => value switch
+    {
+        CandidateStatus.New => "جديد",
+        CandidateStatus.Interview => "مقابلة",
+        CandidateStatus.Accepted => "مقبول",
+        CandidateStatus.Rejected => "مرفوض",
+        CandidateStatus.Hired => "اتعيّن",
+        _ => value.ToString()
+    };
+
+    public static string StatusBadge(CandidateStatus value) => value switch
+    {
+        CandidateStatus.New => "text-bg-light",
+        CandidateStatus.Interview => "text-bg-info",
+        CandidateStatus.Accepted => "text-bg-success",
+        CandidateStatus.Rejected => "text-bg-danger",
+        _ => "text-bg-primary"
+    };
+
+    // AI match score: green 75+, yellow 50+, red below
+    public static string MatchTone(int percent) => percent >= 75 ? "#0ca30c" : percent >= 50 ? "#fab219" : "#d03b3b";
+
+    public static string MatchVerdict(int percent) => percent >= 75 ? "مناسب جداً" : percent >= 50 ? "مناسب لحد ما" : "محتاج تطوير";
+
     public static string Of(RequestStatus value) => value switch
     {
         RequestStatus.Pending => "بانتظار المدير",

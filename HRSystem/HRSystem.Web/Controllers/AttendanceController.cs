@@ -54,11 +54,11 @@ public class AttendanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CheckIn(string? returnUrl)
+    public async Task<IActionResult> CheckIn(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError)
     {
         var me = await _employeeService.GetApproverAsync(User);
         var result = me.EmployeeId is int id
-            ? await _attendanceService.CheckInAsync(id)
+            ? await _attendanceService.CheckInAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError))
             : ServiceResult.Failure("حسابك مش مربوط بملف موظف");
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "اتسجل حضورك" : result.Error;
         return Back(returnUrl);
@@ -66,15 +66,22 @@ public class AttendanceController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CheckOut(string? returnUrl)
+    public async Task<IActionResult> CheckOut(string? returnUrl, double? latitude, double? longitude, double? accuracy, string? locationError)
     {
         var me = await _employeeService.GetApproverAsync(User);
         var result = me.EmployeeId is int id
-            ? await _attendanceService.CheckOutAsync(id)
+            ? await _attendanceService.CheckOutAsync(id, ToPoint(latitude, longitude, accuracy), Short(locationError))
             : ServiceResult.Failure("حسابك مش مربوط بملف موظف");
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "اتسجل انصرافك" : result.Error;
         return Back(returnUrl);
     }
+
+    private static GeoPoint? ToPoint(double? latitude, double? longitude, double? accuracy)
+        => latitude is double lat && longitude is double lng ? new GeoPoint(lat, lng, accuracy) : null;
+
+    // The browser's explanation is shown back to the user, so keep it short
+    private static string? Short(string? text)
+        => string.IsNullOrWhiteSpace(text) ? null : text.Length > 150 ? text[..150] : text;
 
     // ---------- Manual edit (HR) ----------
 

@@ -35,14 +35,25 @@ public class BranchService : IBranchService
                 Id = b.Id,
                 Name = b.Name,
                 Address = b.Address,
-                DepartmentsCount = b.Departments.Count
+                DepartmentsCount = b.Departments.Count,
+                Latitude = b.Latitude,
+                Longitude = b.Longitude,
+                AttendanceRadiusMeters = b.AttendanceRadiusMeters
             })
             .ToListAsync();
 
     public Task<SaveBranchDto?> GetForEditAsync(int id)
         => _branches.QueryNoTracking()
             .Where(b => b.Id == id)
-            .Select(b => new SaveBranchDto { Id = b.Id, Name = b.Name, Address = b.Address })
+            .Select(b => new SaveBranchDto
+            {
+                Id = b.Id,
+                Name = b.Name,
+                Address = b.Address,
+                Latitude = b.Latitude,
+                Longitude = b.Longitude,
+                AttendanceRadiusMeters = b.AttendanceRadiusMeters
+            })
             .FirstOrDefaultAsync();
 
     public Task<List<LookupDto>> GetLookupAsync()
@@ -56,8 +67,13 @@ public class BranchService : IBranchService
         var name = dto.Name.Trim();
         if (await NameExistsAsync(name, excludeId: 0))
             return ServiceResult.Failure("في فرع تاني بنفس الاسم", nameof(dto.Name));
+        if (ValidateLocation(dto) is { } invalid)
+            return invalid;
 
-        await _branches.AddAsync(new Branch { Name = name, Address = dto.Address?.Trim() });
+        var branch = new Branch { Name = name };
+        MapLocation(dto, branch);
+        branch.Address = dto.Address?.Trim();
+        await _branches.AddAsync(branch);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
@@ -72,8 +88,12 @@ public class BranchService : IBranchService
         if (await NameExistsAsync(name, excludeId: dto.Id))
             return ServiceResult.Failure("في فرع تاني بنفس الاسم", nameof(dto.Name));
 
+        if (ValidateLocation(dto) is { } invalid)
+            return invalid;
+
         branch.Name = name;
         branch.Address = dto.Address?.Trim();
+        MapLocation(dto, branch);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
     }
@@ -92,6 +112,19 @@ public class BranchService : IBranchService
         _branches.Remove(branch);
         await _unitOfWork.SaveChangesAsync();
         return ServiceResult.Success();
+    }
+
+    // The location only makes sense as a pair
+    private static ServiceResult? ValidateLocation(SaveBranchDto dto)
+        => (dto.Latitude is null) != (dto.Longitude is null)
+            ? ServiceResult.Failure("لازم تدخل خط العرض وخط الطول مع بعض، أو تسيبهم فاضيين الاتنين", nameof(dto.Latitude))
+            : null;
+
+    private static void MapLocation(SaveBranchDto dto, Branch branch)
+    {
+        branch.Latitude = dto.Latitude;
+        branch.Longitude = dto.Longitude;
+        branch.AttendanceRadiusMeters = dto.AttendanceRadiusMeters;
     }
 
     private Task<bool> NameExistsAsync(string name, int excludeId)

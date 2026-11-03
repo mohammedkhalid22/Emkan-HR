@@ -66,6 +66,14 @@ public class AttendanceRecordDto
     public AttendanceStatus Status { get; set; }
     public AttendanceSource Source { get; set; }
     public string? Notes { get; set; }
+
+    public double? CheckInLatitude { get; set; }
+    public double? CheckInLongitude { get; set; }
+    public int? CheckInDistanceMeters { get; set; }
+    public double? CheckOutLatitude { get; set; }
+    public double? CheckOutLongitude { get; set; }
+    public int? CheckOutDistanceMeters { get; set; }
+    public int? BranchRadiusMeters { get; set; }
 }
 
 public class TodayAttendanceDto

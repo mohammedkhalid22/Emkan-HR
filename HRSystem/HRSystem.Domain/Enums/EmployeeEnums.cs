@@ -21,6 +21,15 @@ public enum ContractType : byte
     PartTime = 3
 }
 
+public enum CandidateStatus : byte
+{
+    New = 1,
+    Interview = 2,
+    Accepted = 3,
+    Rejected = 4,
+    Hired = 5
+}
+
 public enum EmployeeStatus : byte
 {
     Active = 1,

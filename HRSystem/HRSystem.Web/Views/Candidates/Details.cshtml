@@ -1,0 +1,100 @@
+@model CandidateDetailsDto
+@{
+    ViewData["Title"] = Model.Name;
+    var hired = Model.Status == CandidateStatus.Hired;
+}
+
+<div class="page-card mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="flex-grow-1">
+            <h2 class="h5 fw-bold mb-1" dir="auto">@Model.Name</h2>
+            <div class="text-muted small">
+                متقدم لوظيفة <strong>@Model.JobTitleName</strong> · اترفع @Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")
+            </div>
+            <div class="small mt-1">
+                @if (Model.Phone is not null) { <span class="ltr-value d-inline-block me-3"><i class="bi bi-telephone"></i> @Model.Phone</span> }
+                @if (Model.Email is not null) { <span class="ltr-value d-inline-block me-3"><i class="bi bi-envelope"></i> @Model.Email</span> }
+                @if (Model.Address is not null) { <span><i class="bi bi-geo-alt"></i> @Model.Address</span> }
+            </div>
+            <span class="badge @Labels.StatusBadge(Model.Status) mt-2">@Labels.Of(Model.Status)</span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Cv" asp-route-id="@Model.Id" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> الـ CV</a>
+            @if (hired && Model.HiredEmployeeId is int employeeId)
+            {
+                <a asp-controller="Employees" asp-action="Details" asp-route-id="@employeeId" class="btn btn-success"><i class="bi bi-person-badge"></i> ملف الموظف</a>
+            }
+            else
+            {
+                <a asp-controller="Employees" asp-action="Create" asp-route-candidateId="@Model.Id" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> عيّنه كموظف
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="page-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="h6 fw-bold mb-0"><i class="bi bi-stars text-primary"></i> تحليل الذكاء الاصطناعي</h3>
+                <form asp-action="Reanalyze" asp-route-id="@Model.Id" method="post" data-busy="بيحلل...">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat"></i> حلّل تاني</button>
+                </form>
+            </div>
+
+            @if (Model.AnalysisError is not null)
+            {
+                <div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle"></i> آخر محاولة تحليل فشلت: @Model.AnalysisError</div>
+            }
+
+            @if (Model.Analysis is { } analysis)
+            {
+                <partial name="_CvResult" model="analysis" />
+            }
+            else
+            {
+                <div class="empty-state"><i class="bi bi-hourglass-split"></i> الـ CV لسه ماتحللش</div>
+            }
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="page-card h-100">
+            <h3 class="h6 fw-bold mb-3">المتابعة</h3>
+            @if (hired)
+            {
+                <p class="text-muted mb-0">المتقدم ده اتعيّن، والـ CV والتحليل اتنقلوا لملف الموظف.</p>
+            }
+            else
+            {
+                <form asp-action="SetStatus" method="post">
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label small" for="Status">الحالة</label>
+                        <select name="Status" id="Status" class="form-select">
+                            @foreach (var status in Enum.GetValues<CandidateStatus>().Where(s => s != CandidateStatus.Hired))
+                            {
+                                <option value="@status" selected="@(Model.Status == status)">@Labels.Of(status)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small" for="Notes">ملاحظات (مقابلة، مرتب متوقع...)</label>
+                        <textarea name="Notes" id="Notes" class="form-control" rows="5" maxlength="1000">@Model.Notes</textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+                        <button type="button" class="btn btn-outline-danger"
+                                data-delete-url="@Url.Action("Delete", new { id = Model.Id })" data-delete-name="@Model.Name">
+                            <i class="bi bi-trash"></i> مسح
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<a asp-action="Index" asp-route-jobTitleId="@Model.JobTitleId" class="btn btn-light mt-3"><i class="bi bi-arrow-right"></i> رجوع للمتقدمين</a>

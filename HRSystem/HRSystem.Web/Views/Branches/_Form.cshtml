@@ -17,6 +17,50 @@
             <span asp-validation-for="Address" class="text-danger"></span>
         </div>
 
+        <fieldset class="border rounded p-3 mb-4">
+            <legend class="fs-6 fw-bold w-auto px-2 mb-0"><i class="bi bi-geo-alt"></i> موقع الفرع للحضور من الموبايل</legend>
+            <p class="text-muted small mb-3">
+                لو حددت الموقع، الموظفين مش هيقدروا يسجلوا حضور من البرنامج غير وهما جوه المسافة المسموحة.
+                سيبه فاضي لو مش عايز تقيدهم بمكان.
+            </p>
+
+            <div class="mb-3">
+                <label for="paste-location" class="form-label">الصق الموقع من Google Maps</label>
+                <input id="paste-location" class="form-control ltr-value" placeholder="30.04442, 31.23571" />
+                <div class="form-text">في Google Maps اعمل كليك يمين على مكان الفرع، ودوس على الأرقام اللي فوق عشان تتنسخ، والصقها هنا.</div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Latitude" class="form-label"></label>
+                    <input asp-for="Latitude" type="number" step="any" class="form-control ltr-value" />
+                    <span asp-validation-for="Latitude" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Longitude" class="form-label"></label>
+                    <input asp-for="Longitude" type="number" step="any" class="form-control ltr-value" />
+                    <span asp-validation-for="Longitude" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AttendanceRadiusMeters" class="form-label"></label>
+                    <input asp-for="AttendanceRadiusMeters" type="number" min="30" max="5000" class="form-control" />
+                    <div class="form-text">200 متر مناسبة لمبنى عادي.</div>
+                    <span asp-validation-for="AttendanceRadiusMeters" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button type="button" id="use-my-location" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-crosshair"></i> استخدم موقعي الحالي
+                </button>
+                <a id="open-map" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-map"></i> شوفه على الخريطة
+                </a>
+                <button type="button" id="clear-location" class="btn btn-sm btn-link text-danger">مسح الموقع</button>
+            </div>
+            <div id="location-status" class="small mt-2"></div>
+        </fieldset>
+
         <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
         <a asp-action="Index" class="btn btn-light">إلغاء</a>
     </form>

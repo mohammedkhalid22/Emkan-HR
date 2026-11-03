@@ -1,0 +1,59 @@
+﻿@model CvAnalysisDto
+@* The AI result card, shared by the employee profile and recruitment *@
+@{
+    var a = Model;
+    var tone = Labels.MatchTone(a.MatchPercent);
+}
+<div class="cv-result">
+    <div class="cv-score" style="--tone: @tone; --pct: @a.MatchPercent">
+        <div class="cv-ring"><span>@a.MatchPercent<small>%</small></span></div>
+        <div class="fw-bold mt-2" style="color: @tone">@Labels.MatchVerdict(a.MatchPercent)</div>
+        <div class="small text-muted">التوافق مع "@a.JobTitleName"</div>
+        @if (!a.HadRequirements)
+        {
+            <span class="badge text-bg-light mt-1">تقديري — من غير متطلبات</span>
+        }
+    </div>
+    <div class="cv-body">
+        <h3 class="h6 fw-bold">الملخص</h3>
+        <p class="mb-3">@a.Summary</p>
+        @if (a.MatchReason is not null)
+        {
+            <p class="cv-reason"><i class="bi bi-lightbulb"></i> @a.MatchReason</p>
+        }
+        <dl class="info-list mb-3">
+            <dt>سنين الخبرة</dt><dd>@(a.ExperienceYears is decimal y ? $"{y:0.#} سنة" : "مش واضحة")</dd>
+            <dt>المؤهل</dt><dd>@(a.Education ?? "—")</dd>
+        </dl>
+        @if (a.Skills is not null)
+        {
+            <h3 class="h6 fw-bold">المهارات</h3>
+            <div class="d-flex flex-wrap gap-1 mb-3">
+                @foreach (var s in CvAnalysisDto.Items(a.Skills))
+                {
+                    <span class="cv-chip" dir="auto">@s</span>
+                }
+            </div>
+        }
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h3 class="h6 fw-bold text-success"><i class="bi bi-check-circle"></i> نقاط القوة</h3>
+                <ul class="cv-list">
+                    @foreach (var s in CvAnalysisDto.Items(a.Strengths)) { <li>@s</li> }
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h3 class="h6 fw-bold text-danger"><i class="bi bi-exclamation-circle"></i> ناقصه إيه</h3>
+                <ul class="cv-list">
+                    @foreach (var s in CvAnalysisDto.Items(a.Gaps)) { <li>@s</li> }
+                </ul>
+            </div>
+        </div>
+        <div class="small text-muted mt-3">
+            اتحلل @a.AnalyzedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            @if (a.FileName is not null) { <span>· من ملف <span dir="ltr">@a.FileName</span></span> }
+            · <span dir="ltr">@a.Model</span>
+            · النتيجة اقتراح من الذكاء الاصطناعي، والقرار ليك.
+        </div>
+    </div>
+</div>

@@ -6,10 +6,14 @@ using HRSystem.DAL.Interfaces;
 using HRSystem.Domain.Identity;
 using HRSystem.Web.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Secrets for this machine only (AI key...), kept out of git
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 // QuestPDF (payslips) is free under its Community license for companies under $1M revenue
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -28,6 +32,15 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddHostedService<AttendanceCloseJob>();
+
+// AI (CV analysis). The key lives in appsettings "Ai:ApiKey" on each machine, never in git.
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.Section));
+builder.Services.AddHttpClient<IAiClient, GeminiClient>(client => client.Timeout = TimeSpan.FromSeconds(90));
+
+// Keep the login cookie keys in a file: shared hosts restart the app often and
+// keys held in memory would log everyone out on each restart
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -67,6 +80,15 @@ using (var scope = app.Services.CreateScope())
         services.GetRequiredService<UserManager<ApplicationUser>>(),
         services.GetRequiredService<RoleManager<IdentityRole>>(),
         app.Configuration.GetSection("SeedAdmin").Get<SeedAdminOptions>());
+}
+
+// "--seed-demo [cv folder]": fill an empty database with the demo company, then stop
+if (args.Contains("--seed-demo"))
+{
+    using var scope = app.Services.CreateScope();
+    var cvFolder = args.SkipWhile(a => a != "--seed-demo").Skip(1).FirstOrDefault();
+    await DemoDataSeeder.RunAsync(scope.ServiceProvider, cvFolder);
+    return;
 }
 
 if (!app.Environment.IsDevelopment())

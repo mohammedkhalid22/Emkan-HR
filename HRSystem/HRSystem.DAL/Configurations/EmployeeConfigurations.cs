@@ -62,6 +62,27 @@ public class EmployeeDocumentConfiguration : IEntityTypeConfiguration<EmployeeDo
     }
 }
 
+public class CvAnalysisConfiguration : IEntityTypeConfiguration<CvAnalysis>
+{
+    public void Configure(EntityTypeBuilder<CvAnalysis> builder)
+    {
+        builder.ToTable("CvAnalyses", t => t.HasCheckConstraint("CK_CvAnalyses_MatchPercent", "[MatchPercent] BETWEEN 0 AND 100"));
+        builder.Property(a => a.JobTitleName).HasMaxLength(100).IsRequired();
+        builder.Property(a => a.Summary).HasMaxLength(2000).IsRequired();
+        builder.Property(a => a.ExperienceYears).HasPrecision(4, 1);
+        builder.Property(a => a.Education).HasMaxLength(500);
+        builder.Property(a => a.MatchReason).HasMaxLength(1000);
+        builder.Property(a => a.Skills).HasMaxLength(2000);
+        builder.Property(a => a.Strengths).HasMaxLength(2000);
+        builder.Property(a => a.Gaps).HasMaxLength(2000);
+        builder.Property(a => a.Model).HasMaxLength(50).IsRequired();
+        builder.HasIndex(a => a.EmployeeId);
+
+        builder.HasOne(a => a.Employee).WithMany().HasForeignKey(a => a.EmployeeId);
+        builder.HasOne(a => a.EmployeeDocument).WithMany().HasForeignKey(a => a.EmployeeDocumentId);
+    }
+}
+
 public class EmployeeHistoryConfiguration : IEntityTypeConfiguration<EmployeeHistory>
 {
     public void Configure(EntityTypeBuilder<EmployeeHistory> builder)

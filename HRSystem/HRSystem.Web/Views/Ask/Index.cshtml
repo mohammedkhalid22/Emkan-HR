@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "اسأل السيستم";
+    var isAvailable = ViewData["IsAvailable"] is true;
+    string[] suggestions =
+    [
+        "مين اتأخر أكتر من 3 مرات الشهر ده؟",
+        "مين أكتر واحد غاب؟",
+        "إجمالي ساعات الأوفر تايم لكل قسم",
+        "مين لسه عنده رصيد إجازة سنوية أكتر من 10 أيام؟",
+        "مين عليه سلف لسه مخلصتش؟",
+        "مين عقده المؤقت هيخلص قريب؟",
+        "مين أقدم موظف في الشركة؟",
+        "أحسن 3 متقدمين للوظايف"
+    ];
+}
+
+@if (!isAvailable)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-plug"></i> خدمة الذكاء الاصطناعي مش متظبطة. حط مفتاح Gemini في <code>appsettings.Local.json</code>.
+    </div>
+}
+
+<div class="ask-shell">
+    <div class="ask-head">
+        <div class="ask-head-icon"><i class="bi bi-stars"></i></div>
+        <div class="flex-grow-1">
+            <div class="fw-bold">اسأل عن موظفينك بالعربي</div>
+            <div class="small text-muted">الحضور والتأخير والإجازات والأرصدة والسلف والمتقدمين. الإجابة من بيانات السيستم بس.</div>
+        </div>
+        <div>
+            <label for="askMonth" class="form-label small text-muted mb-0">شهر الحضور</label>
+            <input type="month" id="askMonth" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM")" />
+        </div>
+    </div>
+
+    <div class="ask-thread" id="askThread" aria-live="polite">
+        <div class="ask-empty" id="askEmpty">
+            <i class="bi bi-chat-square-text"></i>
+            <div class="fw-semibold mt-2">جرّب سؤال من دول</div>
+            <div class="ask-chips">
+                @foreach (var s in suggestions)
+                {
+                    <button type="button" class="ask-chip" data-question="@s">@s</button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <form id="askForm" class="ask-input" autocomplete="off">
+        @Html.AntiForgeryToken()
+        <input id="askQuestion" class="form-control" maxlength="@HRSystem.BLL.Common.HrAsk.MaxQuestionLength"
+               placeholder="مثلاً: مين اتأخر يوم 15؟" disabled="@(!isAvailable)" />
+        <button type="submit" class="btn btn-primary" disabled="@(!isAvailable)" aria-label="اسأل"><i class="bi bi-send-fill"></i></button>
+    </form>
+    <div class="small text-muted px-1 mt-2">
+        <i class="bi bi-shield-lock"></i> السؤال وبيانات الموظفين بيتبعتوا لخدمة Google Gemini عشان يتجاوب. الإجابة اقتراح، راجع الأرقام المهمة من التقارير.
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const thread = document.getElementById('askThread');
+            const form = document.getElementById('askForm');
+            const input = document.getElementById('askQuestion');
+            const month = document.getElementById('askMonth');
+            const token = form.querySelector('input[name=__RequestVerificationToken]').value;
+
+            // Everything from the AI is added as text, never as HTML
+            function bubble(kind) {
+                document.getElementById('askEmpty')?.remove();
+                const div = document.createElement('div');
+                div.className = 'ask-msg ask-' + kind;
+                thread.appendChild(div);
+                return div;
+            }
+
+            function table(columns, rows) {
+                const wrap = document.createElement('div');
+                wrap.className = 'table-responsive mt-2';
+                const t = document.createElement('table');
+                t.className = 'table table-sm table-bordered align-middle mb-0 bg-white';
+                const head = t.createTHead().insertRow();
+                columns.forEach(c => { const th = document.createElement('th'); th.textContent = c; head.appendChild(th); });
+                const body = t.createTBody();
+                rows.forEach(r => { const tr = body.insertRow(); r.forEach(v => { tr.insertCell().textContent = v; }); });
+                wrap.appendChild(t);
+                return wrap;
+            }
+
+            async function ask(question) {
+                question = question.trim();
+                if (!question) return;
+
+                bubble('user').textContent = question;
+                const reply = bubble('bot');
+                reply.innerHTML = '<span class="spinner-border spinner-border-sm"></span> بيدوّر في البيانات...';
+                input.value = '';
+                input.disabled = true;
+                thread.scrollTop = thread.scrollHeight;
+
+                try {
+                    const body = new FormData();
+                    body.append('__RequestVerificationToken', token);
+                    body.append('question', question);
+                    body.append('month', month.value);
+                    const res = await fetch('@Url.Action("Question")', { method: 'POST', body });
+                    const data = res.ok ? await res.json() : { ok: false, error: 'حصل خطأ. جرّب تاني' };
+
+                    reply.textContent = '';
+                    if (!data.ok) {
+                        reply.classList.add('ask-error');
+                        reply.textContent = data.error;
+                    } else {
+                        const p = document.createElement('div');
+                        p.className = 'ask-text';
+                        p.textContent = data.answer;
+                        reply.appendChild(p);
+                        if (data.columns?.length && data.rows?.length) reply.appendChild(table(data.columns, data.rows));
+                    }
+                } catch {
+                    reply.classList.add('ask-error');
+                    reply.textContent = 'مش قادرين نوصل للسيرفر. جرّب تاني';
+                }
+
+                input.disabled = false;
+                input.focus();
+                thread.scrollTop = thread.scrollHeight;
+            }
+
+            form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+            thread.addEventListener('click', e => {
+                const chip = e.target.closest('[data-question]');
+                if (chip) ask(chip.dataset.question);
+            });
+        })();
+    </script>
+}

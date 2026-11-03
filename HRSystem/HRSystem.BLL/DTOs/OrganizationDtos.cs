@@ -10,6 +10,9 @@ public class BranchDto
     public string Name { get; set; } = null!;
     public string? Address { get; set; }
     public int DepartmentsCount { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int AttendanceRadiusMeters { get; set; }
 }
 
 public class SaveBranchDto
@@ -24,6 +27,18 @@ public class SaveBranchDto
     [Display(Name = "العنوان")]
     [StringLength(250, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
     public string? Address { get; set; }
+
+    [Display(Name = "خط العرض (Latitude)")]
+    [Range(-90, 90, ErrorMessage = "{0} لازم يكون بين {1} و {2}")]
+    public double? Latitude { get; set; }
+
+    [Display(Name = "خط الطول (Longitude)")]
+    [Range(-180, 180, ErrorMessage = "{0} لازم يكون بين {1} و {2}")]
+    public double? Longitude { get; set; }
+
+    [Display(Name = "المسافة المسموحة للحضور (متر)")]
+    [Range(30, 5000, ErrorMessage = "{0} لازم تكون بين {1} و {2} متر")]
+    public int AttendanceRadiusMeters { get; set; } = 200;
 }
 
 // ---------- Departments ----------
@@ -67,6 +82,7 @@ public class JobTitleDto
     public decimal? MinSalary { get; set; }
     public decimal? MaxSalary { get; set; }
     public int EmployeesCount { get; set; }
+    public bool HasRequirements { get; set; }
 }
 
 public class SaveJobTitleDto
@@ -85,4 +101,8 @@ public class SaveJobTitleDto
     [Display(Name = "الحد الأقصى للمرتب")]
     [Range(0, 10_000_000, ErrorMessage = "{0} لازم يكون بين {1} و {2}")]
     public decimal? MaxSalary { get; set; }
+
+    [Display(Name = "متطلبات الوظيفة")]
+    [StringLength(2000, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? Requirements { get; set; }
 }

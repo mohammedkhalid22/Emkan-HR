@@ -41,6 +41,7 @@ public class JobTitleConfiguration : IEntityTypeConfiguration<JobTitle>
     public void Configure(EntityTypeBuilder<JobTitle> builder)
     {
         builder.Property(j => j.Name).HasMaxLength(100).IsRequired();
+        builder.Property(j => j.Requirements).HasMaxLength(2000);
         builder.HasIndex(j => j.Name).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.ToTable(t => t.HasCheckConstraint("CK_JobTitles_SalaryRange",
             "[MinSalary] IS NULL OR [MaxSalary] IS NULL OR [MinSalary] <= [MaxSalary]"));

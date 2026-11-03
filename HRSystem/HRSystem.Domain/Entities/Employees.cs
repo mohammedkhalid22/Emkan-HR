@@ -42,6 +42,9 @@ public class Employee : BaseEntity
     public int? ShiftId { get; set; }
     public Shift? Shift { get; set; }
 
+    // Field / remote staff: may check in from anywhere (the location is still recorded)
+    public bool AllowRemoteAttendance { get; set; }
+
     public string? UserId { get; set; }
     public ApplicationUser? User { get; set; }
 
@@ -50,6 +53,33 @@ public class Employee : BaseEntity
     public ICollection<LeaveBalance> LeaveBalances { get; set; } = new List<LeaveBalance>();
     public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
     public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
+}
+
+// What the AI made of the employee's CV, kept so it isn't sent again on every visit
+public class CvAnalysis : BaseEntity
+{
+    public int EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
+
+    public int? EmployeeDocumentId { get; set; }
+    public EmployeeDocument? EmployeeDocument { get; set; }
+
+    // The job the CV was scored against, as it was at the time
+    public string JobTitleName { get; set; } = null!;
+    public bool HadRequirements { get; set; }
+
+    public string Summary { get; set; } = null!;
+    public decimal? ExperienceYears { get; set; }
+    public string? Education { get; set; }
+    public int MatchPercent { get; set; }
+    public string? MatchReason { get; set; }
+
+    // One item per line
+    public string? Skills { get; set; }
+    public string? Strengths { get; set; }
+    public string? Gaps { get; set; }
+
+    public string Model { get; set; } = null!;
 }
 
 public class EmployeeDocument : BaseEntity

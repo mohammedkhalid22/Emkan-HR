@@ -217,6 +217,7 @@ public class EmployeeService : IEmployeeService
                 JobTitleId = e.JobTitleId,
                 ManagerId = e.ManagerId,
                 ShiftId = e.ShiftId,
+                AllowRemoteAttendance = e.AllowRemoteAttendance,
                 HireDate = e.HireDate,
                 ContractType = e.ContractType,
                 ContractEndDate = e.ContractEndDate,
@@ -376,6 +377,7 @@ public class EmployeeService : IEmployeeService
         employee.JobTitleId = dto.JobTitleId!.Value;
         employee.ManagerId = dto.ManagerId;
         employee.ShiftId = dto.ShiftId;
+        employee.AllowRemoteAttendance = dto.AllowRemoteAttendance;
         employee.HireDate = dto.HireDate!.Value;
         employee.ContractType = dto.ContractType!.Value;
         employee.ContractEndDate = dto.ContractEndDate;

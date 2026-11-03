@@ -4,32 +4,68 @@
     Layout = "_AuthLayout";
 }
 
-<form asp-action="Login" method="post">
+<div class="auth-greeting">
+    <h2>أهلاً بيك 👋</h2>
+    <p>سجّل دخولك عشان تكمّل شغلك</p>
+</div>
+
+<form asp-action="Login" method="post" novalidate>
     <input type="hidden" asp-for="ReturnUrl" />
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
 
     <div class="mb-3">
         <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" dir="ltr" autocomplete="username" autofocus />
-        <span asp-validation-for="Email" class="text-danger"></span>
+        <div class="auth-field">
+            <i class="bi bi-envelope"></i>
+            <input asp-for="Email" class="form-control" dir="ltr" autocomplete="username" placeholder="name@company.com" autofocus />
+        </div>
+        <span asp-validation-for="Email" class="text-danger small"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" dir="ltr" autocomplete="current-password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
+        <div class="auth-field">
+            <i class="bi bi-lock"></i>
+            <input asp-for="Password" class="form-control" dir="ltr" autocomplete="current-password" placeholder="••••••••" />
+            <button type="button" class="auth-eye" id="togglePassword" aria-label="إظهار كلمة السر" title="إظهار كلمة السر">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        <span asp-validation-for="Password" class="text-danger small"></span>
     </div>
 
-    <div class="form-check mb-3">
-        <input asp-for="RememberMe" class="form-check-input" />
-        <label asp-for="RememberMe" class="form-check-label"></label>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="form-check mb-0">
+            <input asp-for="RememberMe" class="form-check-input" />
+            <label asp-for="RememberMe" class="form-check-label"></label>
+        </div>
+        <span class="small text-muted" title="مفيش استرجاع تلقائي: مدير النظام بيغيّرها من شاشة المستخدمين">نسيت كلمة السر؟ كلّم مدير النظام</span>
     </div>
 
-    <button type="submit" class="btn btn-primary w-100">
-        <i class="bi bi-box-arrow-in-left"></i> دخول
+    <button type="submit" class="btn auth-submit w-100">
+        دخول <i class="bi bi-arrow-left"></i>
     </button>
 </form>
 
+<p class="auth-note"><i class="bi bi-shield-check"></i> لحمايتك، الحساب بيتقفل 15 دقيقة بعد 5 محاولات غلط</p>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const input = document.getElementById('Password');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            this.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+            this.title = show ? 'إخفاء كلمة السر' : 'إظهار كلمة السر';
+        });
+
+        // Spinner while signing in
+        document.querySelector('main form').addEventListener('submit', function () {
+            if (window.jQuery && !$(this).valid()) return;
+            const button = this.querySelector('.auth-submit');
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> جاري الدخول...';
+        });
+    </script>
 }
