@@ -34,6 +34,12 @@ builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddHostedService<AttendanceCloseJob>();
 builder.Services.AddHostedService<ReminderJob>();
 
+// Daily database backup (settings under "Backup"); needs a server that allows BACKUP DATABASE
+builder.Services.Configure<BackupOptions>(builder.Configuration.GetSection(BackupOptions.Section));
+builder.Services.AddSingleton<BackupState>();
+builder.Services.AddSingleton<DatabaseBackup>();
+builder.Services.AddHostedService<BackupJob>();
+
 // Notification emails: off until "Email:Host" and "Email:From" are set (appsettings.Local.json on each server)
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();

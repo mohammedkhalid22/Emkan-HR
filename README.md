@@ -25,3 +25,19 @@
 ## النشر على الاستضافة
 
 اعمل Publish (Portable)، وارفع الـ zip جوه `wwwroot` على MonsterASP، واعمله Unzip. الخطوات بالتفصيل في `Publish/Hosting/خطوات الرفع على الاستضافة.txt`.
+
+## النسخ الاحتياطي
+
+البرنامج بياخد نسخة كاملة من الداتا بيز كل يوم بعد الساعة 2 بالليل، ويحتفظ بآخر 14 نسخة. تقدر تشوف الحالة وتاخد نسخة في أي وقت من **النسخ الاحتياطي** في القائمة (للأدمن بس). الإعدادات في `appsettings.json` في قسم `Backup`.
+
+- ده بيشتغل على جهاز أو سيرفر خاص بيكم. **الاستضافة المشتركة (MonsterASP) مش بتسمح بيه**، وهناك النسخة بتتاخد من لوحة تحكم الاستضافة.
+- لو سبت `Folder` فاضي، النسخ بتتحفظ في الفولدر الافتراضي بتاع SQL Server. ده شغال، بس البرنامج مش هيقدر ينزّل الملفات ولا يمسح القديم منها.
+- الأحسن تعمل فولدر للنسخ (ويا ريت على هارد تاني) وتديله صلاحية من PowerShell كـ Administrator:
+
+```powershell
+New-Item -ItemType Directory -Force D:\EmkanBackups
+icacls D:\EmkanBackups /grant 'NT Service\MSSQL$MSSQLSERVER_2022:(OI)(CI)M' /grant "$env:USERNAME:(OI)(CI)M"
+```
+
+  وبعدين حط `"Folder": "D:\\EmkanBackups"` في الإعدادات. (`MSSQLSERVER_2022` هو اسم الـ instance. ولو البرنامج شغال على IIS، ادي الصلاحية لحساب الـ App Pool بدل `$env:USERNAME`.)
+- الرجوع لنسخة بيتعمل من SQL Server Management Studio: Databases ← Restore Database.

@@ -1,0 +1,109 @@
+@model HRSystem.Web.Controllers.BackupViewModel
+@{
+    ViewData["Title"] = "النسخ الاحتياطي";
+    var o = Model.Options;
+    var last = Model.State.LastResult;
+    static string Size(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024:0.#} MB" : $"{bytes / 1024d:0} KB";
+}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-3"><i class="bi bi-database-check"></i> الحالة</h2>
+            <dl class="row small mb-3">
+                <dt class="col-5 text-muted fw-normal">النسخة اليومية</dt>
+                <dd class="col-7">
+                    @if (o.Enabled) { <span class="badge text-bg-success">شغالة</span> <span>كل يوم بعد الساعة @o.AtHour</span> }
+                    else { <span class="badge text-bg-secondary">مقفولة</span> }
+                </dd>
+                <dt class="col-5 text-muted fw-normal">قاعدة البيانات</dt>
+                <dd class="col-7" dir="ltr" style="text-align: right">@Model.DatabaseName</dd>
+                <dt class="col-5 text-muted fw-normal">الفولدر</dt>
+                <dd class="col-7">@(string.IsNullOrWhiteSpace(o.Folder) ? "فولدر النسخ الافتراضي بتاع SQL Server" : o.Folder)</dd>
+                <dt class="col-5 text-muted fw-normal">بنحتفظ بـ</dt>
+                <dd class="col-7">آخر @o.KeepCount نسخة</dd>
+                <dt class="col-5 text-muted fw-normal">آخر محاولة</dt>
+                <dd class="col-7">
+                    @if (Model.State.LastAttemptAt is DateTime at)
+                    {
+                        <span>@at.ToString("yyyy-MM-dd HH:mm")</span>
+                        @if (last?.Succeeded == true) { <span class="badge text-bg-success">نجحت</span> }
+                        else { <span class="badge text-bg-danger">فشلت</span> }
+                    }
+                    else { <span class="text-muted">من ساعة ما البرنامج اشتغل مفيش</span> }
+                </dd>
+            </dl>
+
+            @if (last is { Succeeded: false })
+            {
+                <div class="alert alert-danger small">@last.Error</div>
+            }
+            @if (Model.State.PruneWarning is string warning)
+            {
+                <div class="alert alert-warning small">@warning</div>
+            }
+
+            <form asp-action="Run" method="post" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').innerHTML = '<span class=&quot;spinner-border spinner-border-sm&quot;></span> بتتاخد...'">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-down"></i> خد نسخة دلوقتي</button>
+            </form>
+
+            <p class="small text-muted mt-3 mb-0">
+                الإعدادات دي في ملف appsettings على السيرفر (قسم Backup). عشان تقدر تنزّل النسخ من هنا والقديم يتمسح لوحده،
+                حدد فولدر خاص بالنسخ واديله صلاحية لخدمة SQL Server وللبرنامج (الخطوات في README).
+                والأحسن يكون على هارد تاني أو يتنسخ لمكان برا السيرفر (Google Drive / OneDrive) عشان لو الجهاز نفسه باظ.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="page-card h-100">
+            <h2 class="h6 fw-bold mb-3"><i class="bi bi-clock-history"></i> آخر النسخ</h2>
+            @if (Model.HistoryUnavailable)
+            {
+                <div class="text-muted small">السيرفر مش بيسمح بقراية سجل النسخ. ده المعتاد في الاستضافة المشتركة: النسخ الاحتياطي بيتعمل من لوحة تحكم الاستضافة.</div>
+            }
+            else if (Model.History.Count == 0)
+            {
+                <div class="empty-state text-center text-muted py-4">
+                    <i class="bi bi-database fs-1 d-block mb-2"></i>
+                    لسه مفيش نسخ متاخدة
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>إمتى</th><th>الحجم</th><th>الملف</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var b in Model.History)
+                            {
+                                <tr>
+                                    <td class="text-nowrap small">@b.FinishedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="small text-nowrap">@Size(b.SizeBytes)</td>
+                                    <td class="small text-muted" dir="ltr" style="text-align: right; overflow-wrap: anywhere">@b.Name</td>
+                                    <td class="text-end">
+                                        @if (b.Exists is null)
+                                        {
+                                            <span class="badge text-bg-light" title="الملف موجود في فولدر SQL Server بس البرنامج مالوش صلاحية يشوفه، فمينفعش يتنزل من هنا">على السيرفر</span>
+                                        }
+                                        else if (b.Exists == false)
+                                        {
+                                            <span class="badge text-bg-light" title="الملف اتمسح أو مش على الجهاز ده">مش موجود</span>
+                                        }
+                                        else if (b.Name.StartsWith(HRSystem.Web.Services.DatabaseBackup.FilePrefix))
+                                        {
+                                            <a asp-action="Download" asp-route-name="@b.Name" class="btn btn-sm btn-outline-secondary" title="تنزيل"><i class="bi bi-download"></i></a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            <p class="small text-muted mt-3 mb-0">
+                <i class="bi bi-info-circle"></i> الرجوع لنسخة بيتعمل من SQL Server Management Studio (Restore Database) مش من البرنامج، عشان محدش يمسح الداتا الحالية بالغلط.
+            </p>
+        </div>
+    </div>
+</div>
