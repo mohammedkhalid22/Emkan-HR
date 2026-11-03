@@ -31,6 +31,7 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<EmployeeHistory> EmployeeHistory => Set<EmployeeHistory>();
     public DbSet<CvAnalysis> CvAnalyses => Set<CvAnalysis>();
     public DbSet<Candidate> Candidates => Set<Candidate>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     // Leaves
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
@@ -138,6 +139,10 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
             if (entry.State is not (EntityState.Added or EntityState.Modified))
+                continue;
+
+            // Notifications are messages, not business data: auditing them would flood the log
+            if (entry.Entity is Notification)
                 continue;
 
             var action = entry.State == EntityState.Added ? "Insert"

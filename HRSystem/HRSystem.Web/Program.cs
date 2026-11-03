@@ -32,6 +32,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddHostedService<AttendanceCloseJob>();
+builder.Services.AddHostedService<ReminderJob>();
+
+// Notification emails: off until "Email:Host" and "Email:From" are set (appsettings.Local.json on each server)
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 
 // AI (CV analysis). The key lives in appsettings "Ai:ApiKey" on each machine, never in git.
 builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.Section));

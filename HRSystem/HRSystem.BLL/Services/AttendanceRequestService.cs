@@ -30,9 +30,13 @@ public class AttendanceRequestService : IAttendanceRequestService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IGenericRepository<AttendanceRequest> _requests;
     private readonly IAttendanceService _attendance;
+    private readonly INotificationService _notifications;
 
-    public AttendanceRequestService(IUnitOfWork unitOfWork, IAttendanceService attendance)
+    private const string MineUrl = "/AttendanceRequests/Mine";
+
+    public AttendanceRequestService(IUnitOfWork unitOfWork, IAttendanceService attendance, INotificationService notifications)
     {
+        _notifications = notifications;
         _unitOfWork = unitOfWork;
         _requests = unitOfWork.Repository<AttendanceRequest>();
         _attendance = attendance;
@@ -80,8 +84,13 @@ public class AttendanceRequestService : IAttendanceRequestService
             Status = RequestStatus.Pending
         });
         await _unitOfWork.SaveChangesAsync();
+        await _notifications.RequestSubmittedAsync(employeeId, Describe(dto.Type!.Value, date, from, to));
         return ServiceResult.Success();
     }
+
+    // "إذن يوم 5 نوفمبر من 16:00 لـ 18:00"
+    private static string Describe(AttendanceRequestType type, DateOnly date, TimeOnly from, TimeOnly to)
+        => $"{(type == AttendanceRequestType.Permission ? "إذن" : "مأمورية")} يوم {HrAlerts.Day(date)} من {from:HH:mm} لـ {to:HH:mm}";
 
     public async Task<List<AttendanceRequestDto>> GetForEmployeeAsync(int employeeId, ApproverContext viewer)
     {
@@ -151,6 +160,12 @@ public class AttendanceRequestService : IAttendanceRequestService
         if (request.Status == RequestStatus.Approved)
             await _attendance.RecalculateAsync(request.EmployeeId, request.Date);
 
+        var what = Describe(request.Type, request.Date, request.FromTime, request.ToTime);
+        if (request.Status == RequestStatus.ManagerApproved)
+            await _notifications.RequestManagerApprovedAsync(request.EmployeeId, what);
+        else
+            await _notifications.RequestDecidedAsync(request.EmployeeId, what, approved: true, reason: null, MineUrl);
+
         return ServiceResult.Success();
     }
 
@@ -169,6 +184,8 @@ public class AttendanceRequestService : IAttendanceRequestService
         request.Status = RequestStatus.Rejected;
         request.RejectionReason = reason.Trim();
         await _unitOfWork.SaveChangesAsync();
+        await _notifications.RequestDecidedAsync(request.EmployeeId,
+            Describe(request.Type, request.Date, request.FromTime, request.ToTime), approved: false, request.RejectionReason, MineUrl);
         return ServiceResult.Success();
     }
 

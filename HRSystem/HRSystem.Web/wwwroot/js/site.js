@@ -8,6 +8,39 @@ document.addEventListener('click', function (e) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteModal')).show();
 });
 
+// ---------- Notifications bell ----------
+(function () {
+    const list = document.getElementById('notifList');
+    const badge = document.getElementById('notifBadge');
+    if (!list || !badge) return;
+
+    function showCount(count) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.classList.toggle('d-none', count === 0);
+        document.title = document.title.replace(/^\(\d+\+?\) /, '') ;
+        if (count > 0) document.title = '(' + (count > 99 ? '99+' : count) + ') ' + document.title;
+    }
+
+    async function refresh() {
+        try {
+            const res = await fetch(list.dataset.countUrl, { headers: { 'Accept': 'application/json' } });
+            if (res.ok) showCount((await res.json()).count);
+        } catch { /* offline: try again next time */ }
+    }
+
+    document.getElementById('notifButton').addEventListener('show.bs.dropdown', async function () {
+        try {
+            const res = await fetch(list.dataset.url);
+            if (res.ok) list.innerHTML = await res.text();
+        } catch {
+            list.innerHTML = '<div class="notif-empty">مش قادرين نجيب الإشعارات</div>';
+        }
+    });
+
+    refresh();
+    setInterval(refresh, 60000);
+})();
+
 // Slow posts (AI): show a spinner and stop double submits
 document.addEventListener('submit', function (e) {
     const form = e.target.closest('form[data-busy]');

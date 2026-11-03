@@ -157,6 +157,26 @@
                 </button>
                 <h1 class="topbar-title">@ViewData["Title"]</h1>
                 <div class="topbar-user">
+                    @* The bell: the count is polled, the list loads when it opens (site.js) *@
+                    <div class="dropdown notif-bell">
+                        <button type="button" class="btn btn-light position-relative" id="notifButton" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="الإشعارات">
+                            <i class="bi bi-bell"></i>
+                            <span class="notif-badge d-none" id="notifBadge"></span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end notif-menu" aria-labelledby="notifButton">
+                            <div class="notif-head">
+                                <span class="fw-bold">الإشعارات</span>
+                                <form asp-controller="Notifications" asp-action="ReadAll" method="post" class="d-inline">
+                                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                                    <button type="submit" class="btn btn-link btn-sm p-0">علّم الكل كمقروء</button>
+                                </form>
+                            </div>
+                            <div id="notifList" class="notif-list" data-url="@Url.Action("Latest", "Notifications")" data-count-url="@Url.Action("Count", "Notifications")">
+                                <div class="notif-empty"><span class="spinner-border spinner-border-sm"></span></div>
+                            </div>
+                            <a asp-controller="Notifications" asp-action="Index" class="notif-all">كل الإشعارات</a>
+                        </div>
+                    </div>
                     <span class="text-muted small d-none d-sm-inline"><i class="bi bi-person-circle"></i> @User.Identity?.Name</span>
                     <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-outline-secondary">

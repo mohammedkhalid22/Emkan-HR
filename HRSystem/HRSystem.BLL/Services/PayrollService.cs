@@ -29,10 +29,12 @@ public class PayrollService : IPayrollService
     private readonly IWorkCalendarService _calendar;
     private readonly IAttendanceService _attendance;
     private readonly ILoanService _loans;
+    private readonly INotificationService _notifications;
 
     public PayrollService(IUnitOfWork unitOfWork, ISettingsService settings, IWorkCalendarService calendar,
-        IAttendanceService attendance, ILoanService loans)
+        IAttendanceService attendance, ILoanService loans, INotificationService notifications)
     {
+        _notifications = notifications;
         _unitOfWork = unitOfWork;
         _runs = unitOfWork.Repository<PayrollRun>();
         _settings = settings;
@@ -301,6 +303,7 @@ public class PayrollService : IPayrollService
         run.ApprovedAt = DateTime.UtcNow;
 
         await _unitOfWork.SaveChangesAsync();
+        await _notifications.PayslipsReadyAsync(run.Id);
         return ServiceResult.Success();
     }
 

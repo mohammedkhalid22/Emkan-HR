@@ -35,10 +35,12 @@ public class LeaveRequestService : ILeaveRequestService
     private readonly IWorkCalendarService _calendar;
     private readonly ILeaveBalanceService _balances;
     private readonly IFileStorage _fileStorage;
+    private readonly INotificationService _notifications;
 
     public LeaveRequestService(IUnitOfWork unitOfWork, IWorkCalendarService calendar,
-        ILeaveBalanceService balances, IFileStorage fileStorage)
+        ILeaveBalanceService balances, IFileStorage fileStorage, INotificationService notifications)
     {
+        _notifications = notifications;
         _unitOfWork = unitOfWork;
         _requests = unitOfWork.Repository<LeaveRequest>();
         _calendar = calendar;
@@ -128,8 +130,17 @@ public class LeaveRequestService : ILeaveRequestService
 
         await _requests.AddAsync(request);
         await _unitOfWork.SaveChangesAsync();
+        await _notifications.RequestSubmittedAsync(employeeId, Describe(type.Name, start, end, days));
         return ServiceResult.Success();
     }
+
+    private const string MineUrl = "/LeaveRequests/Mine";
+
+    // "إجازة سنوية من 16 نوفمبر لـ 18 نوفمبر (3 يوم)"
+    private static string Describe(string type, DateOnly start, DateOnly end, decimal days)
+        => start == end
+            ? $"إجازة {type} يوم {HrAlerts.Day(start)}"
+            : $"إجازة {type} من {HrAlerts.Day(start)} لـ {HrAlerts.Day(end)} ({days:0.#} يوم)";
 
     private static string? ValidateDates(DateOnly start, DateOnly end)
     {
@@ -301,6 +312,12 @@ public class LeaveRequestService : ILeaveRequestService
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        var what = Describe(request.LeaveType.Name, request.StartDate, request.EndDate, request.Days);
+        if (request.Status == RequestStatus.ManagerApproved)
+            await _notifications.RequestManagerApprovedAsync(request.EmployeeId, what);
+        else
+            await _notifications.RequestDecidedAsync(request.EmployeeId, what, approved: true, reason: null, MineUrl);
         return ServiceResult.Success();
     }
 
@@ -309,7 +326,7 @@ public class LeaveRequestService : ILeaveRequestService
         if (string.IsNullOrWhiteSpace(reason))
             return ServiceResult.Failure("اكتب سبب الرفض");
 
-        var request = await _requests.Query().Include(r => r.Employee).FirstOrDefaultAsync(r => r.Id == requestId);
+        var request = await _requests.Query().Include(r => r.Employee).Include(r => r.LeaveType).FirstOrDefaultAsync(r => r.Id == requestId);
         if (request is null)
             return ServiceResult.Failure("الطلب مش موجود");
 
@@ -331,6 +348,8 @@ public class LeaveRequestService : ILeaveRequestService
         }
 
         await _unitOfWork.SaveChangesAsync();
+        await _notifications.RequestDecidedAsync(request.EmployeeId,
+            Describe(request.LeaveType.Name, request.StartDate, request.EndDate, request.Days), approved: false, request.RejectionReason, MineUrl);
         return ServiceResult.Success();
     }
 

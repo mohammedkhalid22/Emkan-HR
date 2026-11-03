@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<ICvAnalysisService, CvAnalysisService>();
         services.AddScoped<ICandidateService, CandidateService>();
         services.AddScoped<IAskService, AskService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IEmployeeAccountService, EmployeeAccountService>();
         services.AddScoped<ISettingsService, SettingsService>();
         services.AddScoped<IWorkCalendarService, WorkCalendarService>();

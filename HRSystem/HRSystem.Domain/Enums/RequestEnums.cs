@@ -34,3 +34,16 @@ public enum AttendanceRequestType : byte
     Permission = 1,
     Mission = 2
 }
+
+// Decides the icon and colour of a notification
+public enum NotificationType : byte
+{
+    RequestWaiting = 1,
+    RequestApproved = 2,
+    RequestRejected = 3,
+    Payslip = 4,
+    ContractEnding = 5,
+    DocumentExpiring = 6,
+    Birthday = 7,
+    WorkAnniversary = 8
+}

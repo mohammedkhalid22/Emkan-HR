@@ -1,0 +1,19 @@
+@using HRSystem.BLL.Services
+@model IEnumerable<NotificationDto>
+
+@if (!Model.Any())
+{
+    <div class="notif-empty"><i class="bi bi-bell-slash"></i> مفيش إشعارات</div>
+}
+@foreach (var n in Model)
+{
+    var (icon, tone) = Labels.NotificationIcon(n.Type);
+    <a asp-controller="Notifications" asp-action="Open" asp-route-id="@n.Id" class="notif-item @(n.IsRead ? "" : "unread")">
+        <span class="notif-icon" style="--tone: @tone"><i class="bi @icon"></i></span>
+        <span class="notif-text">
+            <span class="notif-title">@n.Title</span>
+            @if (n.Body is not null) { <span class="notif-body">@n.Body</span> }
+            <span class="notif-time">@Labels.Ago(n.CreatedAt)</span>
+        </span>
+    </a>
+}

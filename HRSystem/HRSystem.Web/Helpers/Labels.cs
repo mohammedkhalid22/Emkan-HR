@@ -66,6 +66,32 @@ public static class Labels
         _ => "text-bg-primary"
     };
 
+    // Bootstrap icon and colour per kind of notification
+    public static (string Icon, string Tone) NotificationIcon(NotificationType type) => type switch
+    {
+        NotificationType.RequestWaiting => ("bi-hourglass-split", "#2a78d6"),
+        NotificationType.RequestApproved => ("bi-check-circle", "#0ca30c"),
+        NotificationType.RequestRejected => ("bi-x-circle", "#d03b3b"),
+        NotificationType.Payslip => ("bi-receipt", "#6250d6"),
+        NotificationType.ContractEnding => ("bi-file-earmark-text", "#eb6834"),
+        NotificationType.DocumentExpiring => ("bi-exclamation-triangle", "#eda100"),
+        NotificationType.Birthday => ("bi-gift", "#e87ba4"),
+        NotificationType.WorkAnniversary => ("bi-award", "#1baf7a"),
+        _ => ("bi-bell", "#2a78d6")
+    };
+
+    // "من 5 دقايق", "إمبارح"... (times are stored in UTC)
+    public static string Ago(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+        if (span.TotalMinutes < 1) return "دلوقتي";
+        if (span.TotalMinutes < 60) return $"من {(int)span.TotalMinutes} دقيقة";
+        if (span.TotalHours < 24) return $"من {(int)span.TotalHours} ساعة";
+        if (span.TotalDays < 2) return "إمبارح";
+        if (span.TotalDays < 7) return $"من {(int)span.TotalDays} أيام";
+        return utc.ToLocalTime().ToString("yyyy-MM-dd");
+    }
+
     // AI match score: green 75+, yellow 50+, red below
     public static string MatchTone(int percent) => percent >= 75 ? "#0ca30c" : percent >= 50 ? "#fab219" : "#d03b3b";
 
