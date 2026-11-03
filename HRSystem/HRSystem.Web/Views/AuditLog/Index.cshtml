@@ -1,0 +1,163 @@
+﻿@using HRSystem.BLL.Services
+@model AuditLogViewModel
+@{
+    ViewData["Title"] = "سجل التغييرات";
+    var f = Model.Filter;
+    var result = Model.Result;
+}
+
+@functions {
+    // One "field: old → new" line; an insert only has the new value, a delete only the old one
+    static string Line(AuditChange c) => c switch
+    {
+        { Field: "PasswordHash" } => "اتغيرت",
+        { Old: null } => Labels.AuditValue(c.Field, c.New),
+        { New: null } => Labels.AuditValue(c.Field, c.Old) + " ← اتشال",
+        _ => $"{Labels.AuditValue(c.Field, c.Old)} ← {Labels.AuditValue(c.Field, c.New)}"
+    };
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Entity">النوع</label>
+            <select name="Entity" id="Entity" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var e in Model.Entities.OrderBy(Labels.AuditEntity))
+                {
+                    <option value="@e" selected="@(f.Entity == e)">@Labels.AuditEntity(e)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="UserId">مين عمل التغيير</label>
+            <select name="UserId" id="UserId" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var a in Model.Actors)
+                {
+                    <option value="@a.Id" selected="@(f.UserId == a.Id)">@a.Name</option>
+                }
+                <option value="-" selected="@(f.UserId == "-")">السيستم (تلقائي)</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="Op">العملية</label>
+            <select name="Op" id="Op" class="form-select">
+                <option value="">الكل</option>
+                @foreach (var a in new[] { "Insert", "Update", "Delete" })
+                {
+                    <option value="@a" selected="@(f.Op == a)">@Labels.AuditAction(a).Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="From">من يوم</label>
+            <input type="date" name="From" id="From" value="@f.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-muted" for="To">لحد يوم</label>
+            <input type="date" name="To" id="To" value="@f.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        @if (!string.IsNullOrEmpty(f.EntityId))
+        {
+            <input type="hidden" name="EntityId" value="@f.EntityId" />
+        }
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> عرض</button>
+            <a asp-action="Index" class="btn btn-light">مسح</a>
+        </div>
+    </form>
+
+    <div class="page-toolbar">
+        <span class="text-muted">@result.TotalCount تغيير</span>
+        @if (!string.IsNullOrEmpty(f.EntityId))
+        {
+            <span class="badge text-bg-light">سجل واحد بس: @Labels.AuditEntity(f.Entity ?? "") #@f.EntityId</span>
+        }
+    </div>
+
+    @if (result.Items.Count == 0)
+    {
+        <div class="empty-state text-center text-muted py-5">
+            <i class="bi bi-journal-check fs-1 d-block mb-2"></i>
+            مفيش تغييرات بالشروط دي
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 audit-table">
+                <thead><tr><th>الوقت</th><th>مين</th><th>العملية</th><th>على إيه</th><th>التفاصيل</th></tr></thead>
+                <tbody>
+                    @foreach (var row in result.Items)
+                    {
+                        var (actionText, actionBadge) = Labels.AuditAction(row.Action);
+                        var record = row.EntityName == "SystemSetting" && row.RecordName is not null ? Labels.Setting(row.RecordName) : row.RecordName;
+                        <tr>
+                            <td class="text-nowrap small" title="@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")">
+                                @row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd")<br /><span class="text-muted">@row.Timestamp.ToLocalTime().ToString("HH:mm")</span>
+                            </td>
+                            <td class="small">@(row.UserName ?? "السيستم")</td>
+                            <td><span class="badge @actionBadge">@actionText</span></td>
+                            <td class="small">
+                                <div class="fw-semibold">@Labels.AuditEntity(row.EntityName)</div>
+                                @if (row.EntityName == "Employee" && int.TryParse(row.EntityId, out var empId))
+                                {
+                                    <a asp-controller="Employees" asp-action="Details" asp-route-id="@empId">@(record ?? $"#{row.EntityId}")</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">@(record ?? $"#{row.EntityId}")</span>
+                                }
+                                <a asp-action="Index" asp-route-Entity="@row.EntityName" asp-route-EntityId="@row.EntityId" class="audit-history" title="كل تغييرات السجل ده"><i class="bi bi-clock-history"></i></a>
+                            </td>
+                            <td class="small">
+                                @if (row.Changes.Count == 0)
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                                else
+                                {
+                                    var shown = row.Changes.Count > 4 ? row.Changes.Take(3).ToList() : row.Changes;
+                                    <ul class="audit-changes">
+                                        @foreach (var c in shown)
+                                        {
+                                            <li><span class="audit-field">@Labels.AuditField(c.Field):</span> @Line(c)</li>
+                                        }
+                                    </ul>
+                                    @if (shown.Count < row.Changes.Count)
+                                    {
+                                        <details>
+                                            <summary>و @(row.Changes.Count - shown.Count) حقل كمان</summary>
+                                            <ul class="audit-changes">
+                                                @foreach (var c in row.Changes.Skip(shown.Count))
+                                                {
+                                                    <li><span class="audit-field">@Labels.AuditField(c.Field):</span> @Line(c)</li>
+                                                }
+                                            </ul>
+                                        </details>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (result.TotalPages > 1)
+    {
+        <nav class="mt-3" aria-label="الصفحات">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item @(result.HasPrevious ? "" : "disabled")">
+                    <a class="page-link" asp-route-Entity="@f.Entity" asp-route-EntityId="@f.EntityId" asp-route-UserId="@f.UserId" asp-route-Op="@f.Op" asp-route-From="@f.From?.ToString("yyyy-MM-dd")" asp-route-To="@f.To?.ToString("yyyy-MM-dd")" asp-route-Page="@(result.Page - 1)">السابق</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">صفحة @result.Page من @result.TotalPages</span></li>
+                <li class="page-item @(result.HasNext ? "" : "disabled")">
+                    <a class="page-link" asp-route-Entity="@f.Entity" asp-route-EntityId="@f.EntityId" asp-route-UserId="@f.UserId" asp-route-Op="@f.Op" asp-route-From="@f.From?.ToString("yyyy-MM-dd")" asp-route-To="@f.To?.ToString("yyyy-MM-dd")" asp-route-Page="@(result.Page + 1)">التالي</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

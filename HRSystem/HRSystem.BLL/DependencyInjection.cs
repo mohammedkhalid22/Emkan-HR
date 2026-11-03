@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IEmployeeAccountService, EmployeeAccountService>();
         services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IWorkCalendarService, WorkCalendarService>();
         services.AddScoped<IShiftService, ShiftService>();
         services.AddScoped<IAttendanceService, AttendanceService>();

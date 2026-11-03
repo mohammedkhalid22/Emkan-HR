@@ -89,5 +89,7 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(a => a.EntityName).HasMaxLength(100).IsRequired();
         builder.Property(a => a.EntityId).HasMaxLength(50).IsRequired();
         builder.HasIndex(a => new { a.EntityName, a.EntityId });
+        // The audit screen lists newest first
+        builder.HasIndex(a => a.Timestamp);
     }
 }

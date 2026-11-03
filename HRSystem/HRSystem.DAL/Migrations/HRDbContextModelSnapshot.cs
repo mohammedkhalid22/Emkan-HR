@@ -202,6 +202,8 @@ namespace HRSystem.DAL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Timestamp");
+
                     b.HasIndex("EntityName", "EntityId");
 
                     b.ToTable("AuditLogs");

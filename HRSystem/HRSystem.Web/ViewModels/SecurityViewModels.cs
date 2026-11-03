@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using HRSystem.BLL.Common;
+using HRSystem.BLL.Services;
 
 namespace HRSystem.Web.ViewModels;
 
@@ -64,6 +66,14 @@ public class TwoFactorSetupViewModel
     [Required(ErrorMessage = "{0} مطلوب")]
     [StringLength(7, MinimumLength = 6, ErrorMessage = "الكود 6 أرقام")]
     public string Code { get; set; } = null!;
+}
+
+public class AuditLogViewModel
+{
+    public AuditLogFilter Filter { get; set; } = new();
+    public PagedResult<AuditLogDto> Result { get; set; } = new();
+    public List<string> Entities { get; set; } = [];
+    public List<(string Id, string Name)> Actors { get; set; } = [];
 }
 
 public class TwoFactorLoginViewModel

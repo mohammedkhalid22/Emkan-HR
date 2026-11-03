@@ -214,6 +214,99 @@ public static class Labels
         _ => "—"
     };
 
+    // ---------- Audit log ----------
+
+    public static string AuditEntity(string name) => name switch
+    {
+        "Branch" => "فرع",
+        "Department" => "قسم",
+        "JobTitle" => "مسمى وظيفي",
+        "Employee" => "موظف",
+        "EmployeeDocument" => "مستند موظف",
+        "EmployeeHistory" => "تاريخ موظف",
+        "CvAnalysis" => "تحليل CV",
+        "Candidate" => "متقدم لوظيفة",
+        "LeaveType" => "نوع إجازة",
+        "LeaveBalance" => "رصيد إجازة",
+        "LeaveRequest" => "طلب إجازة",
+        "PublicHoliday" => "عطلة رسمية",
+        "Shift" => "وردية",
+        "AttendanceRecord" => "سجل حضور",
+        "AttendanceRequest" => "إذن / مأمورية",
+        "SalaryComponent" => "مكوّن مرتب",
+        "EmployeeSalaryComponent" => "بدل / استقطاع موظف",
+        "Loan" => "سلفة",
+        "PayrollAdjustment" => "مكافأة / جزاء",
+        "PayrollRun" => "مسير مرتبات",
+        "PayrollItem" => "كشف مرتب",
+        "TaxBracket" => "شريحة ضريبة",
+        "SystemSetting" => "إعداد",
+        "ApplicationUser" => "حساب دخول",
+        "UserRole" => "صلاحية حساب",
+        _ => name
+    };
+
+    public static (string Text, string Badge) AuditAction(string action) => action switch
+    {
+        "Insert" => ("إضافة", "text-bg-success"),
+        "Update" => ("تعديل", "text-bg-primary"),
+        "Delete" => ("حذف", "text-bg-danger"),
+        _ => (action, "text-bg-secondary")
+    };
+
+    private static readonly Dictionary<string, string> AuditFields = new()
+    {
+        ["Name"] = "الاسم", ["FullName"] = "الاسم", ["FullNameAr"] = "الاسم", ["FullNameEn"] = "الاسم بالإنجليزي",
+        ["Code"] = "الكود", ["NationalId"] = "الرقم القومي", ["BirthDate"] = "تاريخ الميلاد", ["Gender"] = "النوع",
+        ["MaritalStatus"] = "الحالة الاجتماعية", ["Phone"] = "الموبايل", ["Email"] = "البريد", ["Address"] = "العنوان",
+        ["PhotoPath"] = "الصورة", ["HireDate"] = "تاريخ التعيين", ["ContractType"] = "نوع العقد", ["ContractEndDate"] = "نهاية العقد",
+        ["Status"] = "الحالة", ["TerminationDate"] = "تاريخ إنهاء الخدمة", ["TerminationReason"] = "سبب إنهاء الخدمة",
+        ["BasicSalary"] = "المرتب الأساسي", ["InsuranceSalary"] = "أجر التأمينات", ["BankAccount"] = "الحساب البنكي",
+        ["DepartmentId"] = "القسم", ["JobTitleId"] = "المسمى الوظيفي", ["ManagerId"] = "المدير", ["ShiftId"] = "الوردية",
+        ["BranchId"] = "الفرع", ["ParentDepartmentId"] = "القسم الرئيسي", ["EmployeeId"] = "الموظف", ["LeaveTypeId"] = "نوع الإجازة",
+        ["AllowRemoteAttendance"] = "حضور من أي مكان", ["UserId"] = "الحساب",
+        ["StartDate"] = "من", ["EndDate"] = "إلى", ["Days"] = "الأيام", ["Reason"] = "السبب", ["RejectionReason"] = "سبب الرفض",
+        ["Year"] = "السنة", ["Month"] = "الشهر", ["Entitled"] = "المستحق", ["Used"] = "المستخدم", ["Date"] = "التاريخ",
+        ["CheckIn"] = "الحضور", ["CheckOut"] = "الانصراف", ["LateMinutes"] = "دقايق التأخير", ["EarlyLeaveMinutes"] = "انصراف بدري (دقايق)",
+        ["OvertimeMinutes"] = "دقايق الأوفر تايم", ["Source"] = "المصدر", ["Notes"] = "ملاحظات", ["Type"] = "النوع",
+        ["FromTime"] = "من الساعة", ["ToTime"] = "للساعة", ["StartTime"] = "بداية الوردية", ["EndTime"] = "نهاية الوردية", ["GraceMinutes"] = "دقايق السماح",
+        ["Amount"] = "المبلغ", ["Value"] = "القيمة", ["InstallmentsCount"] = "عدد الأقساط", ["MonthlyInstallment"] = "القسط الشهري",
+        ["RemainingAmount"] = "المتبقي", ["NetSalary"] = "الصافي", ["GrossSalary"] = "الإجمالي", ["Rate"] = "النسبة",
+        ["AnnualDays"] = "أيام في السنة", ["IsPaid"] = "مدفوعة", ["MinSalary"] = "أقل مرتب", ["MaxSalary"] = "أعلى مرتب",
+        ["Latitude"] = "خط العرض", ["Longitude"] = "خط الطول", ["AttendanceRadiusMeters"] = "نطاق الحضور (متر)",
+        ["IsActive"] = "مفعّل", ["TwoFactorEnabled"] = "التحقق بخطوتين", ["LockoutEnd"] = "مقفول لحد", ["PasswordHash"] = "كلمة السر",
+        ["RoleId"] = "الدور", ["IsDeleted"] = "محذوف", ["ApprovedAt"] = "اتعتمد في", ["ApprovedBy"] = "اعتمده",
+        ["ManagerActionBy"] = "قرار المدير من", ["ManagerActionAt"] = "قرار المدير في", ["HrActionBy"] = "قرار شؤون العاملين من",
+        ["HrActionAt"] = "قرار شؤون العاملين في", ["AttachmentPath"] = "المرفق", ["DocumentType"] = "نوع المستند",
+        ["FilePath"] = "الملف", ["ExpiryDate"] = "تاريخ الانتهاء", ["HiredEmployeeId"] = "اتعيّن كموظف رقم", ["JobTitleName"] = "الوظيفة",
+        ["MatchPercent"] = "نسبة التوافق", ["CvPath"] = "ملف الـ CV"
+    };
+
+    public static string AuditField(string field) => AuditFields.GetValueOrDefault(field, field);
+
+    // Values come typed from AuditLogService; enums reuse the Arabic names above
+    public static string AuditValue(string field, object? value) => value switch
+    {
+        null => "—",
+        _ when field == "PasswordHash" => "اتغيرت",
+        _ when field == "RoleId" && value is string role => Role(role),
+        bool b => b ? "أيوه" : "لأ",
+        Enum e => EnumName(e),
+        DateTime d => d.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+        DateTimeOffset d => d.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+        DateOnly d => d.ToString("yyyy-MM-dd"),
+        TimeOnly t => t.ToString("HH:mm"),
+        decimal m => m.ToString("0.##"),
+        string s when s.Length > 80 => s[..80] + "…",
+        _ => value.ToString() ?? "—"
+    };
+
+    private static string EnumName(Enum value)
+    {
+        try { return Of((dynamic)value); }
+        catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { return value.ToString(); }
+    }
+
     public static IEnumerable<SelectListItem> RoleOptions(string? selected = null)
         => Roles.All.Select(r => new SelectListItem(Role(r), r, r == selected));
 

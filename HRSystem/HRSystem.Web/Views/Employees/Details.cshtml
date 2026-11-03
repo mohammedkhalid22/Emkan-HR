@@ -24,6 +24,10 @@
         {
             <div class="d-flex gap-2">
                 <a asp-action="Edit" asp-route-id="@e.Id" class="btn btn-outline-primary"><i class="bi bi-pencil"></i> تعديل</a>
+                @if (User.IsInRole(Roles.Admin))
+                {
+                    <a asp-controller="AuditLog" asp-action="Index" asp-route-Entity="Employee" asp-route-EntityId="@e.Id" class="btn btn-outline-secondary" title="مين عدّل ملف الموظف ده وإمتى"><i class="bi bi-journal-text"></i> سجل التغييرات</a>
+                }
                 @if (!isTerminated)
                 {
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#terminateModal">

@@ -4,6 +4,7 @@ using HRSystem.DAL.Interfaces;
 using HRSystem.Domain.Common;
 using HRSystem.Domain.Entities;
 using HRSystem.Domain.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -122,7 +123,7 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
         if (pendingAudits.Count > 0)
         {
             // Ids of added rows are only known after the first save
-            foreach (var (entry, log) in pendingAudits)
+            foreach (var (entry, log) in pendingAudits.Where(p => p.Log.Action == "Insert" && p.Entry.Metadata.FindProperty("Id") is not null))
                 log.EntityId = entry.Property("Id").CurrentValue?.ToString() ?? "";
 
             AuditLogs.AddRange(pendingAudits.Select(p => p.Log));
@@ -132,21 +133,37 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
         return result;
     }
 
+    // Account fields worth a trace; the rest (stamps, failed-login counters, tokens) is noise
+    private static readonly HashSet<string> AuditedUserFields =
+        [nameof(ApplicationUser.FullName), nameof(ApplicationUser.Email), nameof(ApplicationUser.IsActive),
+         nameof(ApplicationUser.TwoFactorEnabled), nameof(ApplicationUser.LockoutEnd), nameof(ApplicationUser.PasswordHash)];
+
     private List<(EntityEntry Entry, AuditLog Log)> CollectAuditEntries(string? userId, DateTime now)
     {
         var audits = new List<(EntityEntry, AuditLog)>();
 
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.State is not (EntityState.Added or EntityState.Modified))
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
                 continue;
 
-            // Notifications are messages, not business data: auditing them would flood the log
-            if (entry.Entity is Notification)
+            // Business data, settings, accounts and role grants. Notifications are messages:
+            // auditing them would flood the log
+            Func<string, bool>? keep = entry.Entity switch
+            {
+                Notification => null,
+                BaseEntity => name => name is not (nameof(BaseEntity.CreatedAt) or nameof(BaseEntity.CreatedBy)
+                    or nameof(BaseEntity.UpdatedAt) or nameof(BaseEntity.UpdatedBy)),
+                SystemSetting => name => name == nameof(SystemSetting.Value),
+                ApplicationUser => AuditedUserFields.Contains,
+                IdentityUserRole<string> => name => name == nameof(IdentityUserRole<string>.RoleId),
+                _ => null
+            };
+            if (keep is null)
                 continue;
 
             var action = entry.State == EntityState.Added ? "Insert"
-                : entry.Entity.IsDeleted ? "Delete"
+                : entry.State == EntityState.Deleted || entry.Entity is BaseEntity { IsDeleted: true } ? "Delete"
                 : "Update";
 
             var oldValues = new Dictionary<string, object?>();
@@ -155,24 +172,33 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
             foreach (var property in entry.Properties)
             {
                 var name = property.Metadata.Name;
-                if (name is nameof(BaseEntity.CreatedAt) or nameof(BaseEntity.CreatedBy)
-                    or nameof(BaseEntity.UpdatedAt) or nameof(BaseEntity.UpdatedBy))
+                if (!keep(name))
                     continue;
 
+                // Never copy a password hash into the log, only the fact that it changed
+                object? Value(object? v) => name == nameof(ApplicationUser.PasswordHash) ? (v is null ? null : "***") : v;
+
                 if (entry.State == EntityState.Added)
-                    newValues[name] = property.CurrentValue;
-                else if (property.IsModified)
+                    newValues[name] = Value(property.CurrentValue);
+                else if (entry.State == EntityState.Deleted)
+                    oldValues[name] = Value(property.OriginalValue);
+                else if (property.IsModified && !Equals(property.OriginalValue, property.CurrentValue))
                 {
-                    oldValues[name] = property.OriginalValue;
-                    newValues[name] = property.CurrentValue;
+                    oldValues[name] = Value(property.OriginalValue);
+                    newValues[name] = Value(property.CurrentValue);
                 }
             }
+
+            // A sign-in only touches counters and stamps: nothing to record
+            if (action == "Update" && newValues.Count == 0)
+                continue;
 
             audits.Add((entry, new AuditLog
             {
                 UserId = userId,
                 Action = action,
-                EntityName = entry.Entity.GetType().Name,
+                EntityName = entry.Entity is IdentityUserRole<string> ? "UserRole" : entry.Metadata.ClrType.Name,
+                EntityId = (entry.Entity is IdentityUserRole<string> role ? role.UserId : entry.Property("Id").CurrentValue?.ToString()) ?? "",
                 OldValues = oldValues.Count == 0 ? null : JsonSerializer.Serialize(oldValues),
                 NewValues = newValues.Count == 0 ? null : JsonSerializer.Serialize(newValues),
                 Timestamp = now
