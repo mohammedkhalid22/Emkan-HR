@@ -56,8 +56,9 @@ public class SecurityViewModel
 
 public class TwoFactorSetupViewModel
 {
-    public string SharedKey { get; set; } = null!;
-    public string AuthenticatorUri { get; set; } = null!;
+    // Shown only; nullable so the posted form (which carries just the code) still validates
+    public string? SharedKey { get; set; }
+    public string? AuthenticatorUri { get; set; }
 
     [Display(Name = "الكود اللي ظاهر في التطبيق")]
     [Required(ErrorMessage = "{0} مطلوب")]
