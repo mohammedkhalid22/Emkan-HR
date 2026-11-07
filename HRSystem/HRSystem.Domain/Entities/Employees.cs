@@ -29,6 +29,37 @@ public class Employee : BaseEntity
     public decimal InsuranceSalary { get; set; }
     public string? BankAccount { get; set; }
 
+    // ----- Official data -----
+    public string? Nationality { get; set; }
+    public Religion? Religion { get; set; }
+    public MilitaryStatus? MilitaryStatus { get; set; }
+    public string? BloodType { get; set; }
+    public string? InsuranceNumber { get; set; }
+    public DateOnly? InsuranceStartDate { get; set; }
+    public string? PassportNumber { get; set; }
+    public DateOnly? PassportExpiry { get; set; }
+    public string? DrivingLicenseNumber { get; set; }
+    public DateOnly? DrivingLicenseExpiry { get; set; }
+
+    // ----- Bank and home -----
+    public string? BankName { get; set; }
+    public string? BankBranch { get; set; }
+    public string? Iban { get; set; }
+    public string? Governorate { get; set; }
+    public string? City { get; set; }
+
+    // ----- Emergency contact -----
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactRelation { get; set; }
+    public string? EmergencyContactPhone { get; set; }
+
+    // The employee's number on the fingerprint device (links device punches to this file)
+    public string? FingerprintId { get; set; }
+
+    // When set, the department, job title and direct manager follow the position
+    public int? PositionId { get; set; }
+    public Position? Position { get; set; }
+
     public int DepartmentId { get; set; }
     public Department Department { get; set; } = null!;
 
@@ -53,6 +84,46 @@ public class Employee : BaseEntity
     public ICollection<LeaveBalance> LeaveBalances { get; set; } = new List<LeaveBalance>();
     public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
     public ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
+    public ICollection<EmployeeFamilyMember> FamilyMembers { get; set; } = new List<EmployeeFamilyMember>();
+    public ICollection<EmployeeQualification> Qualifications { get; set; } = new List<EmployeeQualification>();
+    public ICollection<EmployeeExperience> Experiences { get; set; } = new List<EmployeeExperience>();
+}
+
+public class EmployeeFamilyMember : BaseEntity
+{
+    public int EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
+
+    public string Name { get; set; } = null!;
+    public FamilyRelation Relation { get; set; }
+    public DateOnly? BirthDate { get; set; }
+    public string? NationalId { get; set; }
+}
+
+// A degree, a course or a professional certificate
+public class EmployeeQualification : BaseEntity
+{
+    public int EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
+
+    public QualificationType Type { get; set; }
+    public string Title { get; set; } = null!;
+    public string? Institution { get; set; }
+    public int? Year { get; set; }
+    public string? Grade { get; set; }
+}
+
+// Work before joining the company
+public class EmployeeExperience : BaseEntity
+{
+    public int EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
+
+    public string Company { get; set; } = null!;
+    public string? JobTitle { get; set; }
+    public DateOnly? FromDate { get; set; }
+    public DateOnly? ToDate { get; set; }
+    public string? LeavingReason { get; set; }
 }
 
 // What the AI made of the employee's CV, kept so it isn't sent again on every visit

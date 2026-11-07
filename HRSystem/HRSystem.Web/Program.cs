@@ -33,6 +33,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddHostedService<AttendanceCloseJob>();
 builder.Services.AddHostedService<ReminderJob>();
+builder.Services.AddHostedService<DeviceSyncJob>();
 
 // Daily database backup (settings under "Backup"); needs a server that allows BACKUP DATABASE
 builder.Services.Configure<BackupOptions>(builder.Configuration.GetSection(BackupOptions.Section));

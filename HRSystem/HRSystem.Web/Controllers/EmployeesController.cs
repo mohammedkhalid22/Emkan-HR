@@ -1,4 +1,4 @@
-﻿using HRSystem.BLL.DTOs;
+using HRSystem.BLL.DTOs;
 using HRSystem.BLL.Services;
 using HRSystem.Domain.Identity;
 using HRSystem.Web.Extensions;
@@ -23,6 +23,7 @@ public class EmployeesController : Controller
     private readonly ICvAnalysisService _cvService;
     private readonly IEmployeeDocumentService _documentService;
     private readonly ICandidateService _candidateService;
+    private readonly IPositionService _positionService;
 
     public EmployeesController(
         IEmployeeService employeeService,
@@ -34,8 +35,10 @@ public class EmployeesController : Controller
         ILoanService loanService,
         ICvAnalysisService cvService,
         IEmployeeDocumentService documentService,
-        ICandidateService candidateService)
+        ICandidateService candidateService,
+        IPositionService positionService)
     {
+        _positionService = positionService;
         _candidateService = candidateService;
         _cvService = cvService;
         _documentService = documentService;
@@ -103,6 +106,9 @@ public class EmployeesController : Controller
             CanSeeSalary = User.IsAdminOrHR() || scope.OwnEmployeeId == id,
             Account = isAdmin && employee.UserId is not null ? await _accountService.GetAsync(employee.UserId) : null,
             NewDocument = new UploadDocumentDto { EmployeeId = id },
+            NewFamilyMember = new FamilyMemberDto { EmployeeId = id },
+            NewQualification = new QualificationDto { EmployeeId = id },
+            NewExperience = new ExperienceDto { EmployeeId = id },
             Terminate = new TerminateEmployeeDto { EmployeeId = id, TerminationDate = DateOnly.FromDateTime(DateTime.Today) },
             NewAccount = new CreateAccountDto { EmployeeId = id, Email = employee.Email ?? "", Role = Roles.Employee }
         };
@@ -236,6 +242,7 @@ public class EmployeesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(EmployeeFormViewModel model)
     {
+        PositionDecidesJob(model);
         if (ModelState.IsValid)
         {
             var result = await _employeeService.CreateAsync(model, model.Photo.ToFileUpload());
@@ -275,6 +282,7 @@ public class EmployeesController : Controller
         if (id != model.Id)
             return BadRequest();
 
+        PositionDecidesJob(model);
         if (ModelState.IsValid)
         {
             var result = await _employeeService.UpdateAsync(model, model.Photo.ToFileUpload());
@@ -306,6 +314,15 @@ public class EmployeesController : Controller
         return RedirectToAction(nameof(Details), new { id = dto.EmployeeId });
     }
 
+    // With a position picked, the department and job title come from it (the service fills them)
+    private void PositionDecidesJob(EmployeeFormViewModel model)
+    {
+        if (model.PositionId is null)
+            return;
+        ModelState.Remove(nameof(model.DepartmentId));
+        ModelState.Remove(nameof(model.JobTitleId));
+    }
+
     private string FirstError()
         => ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() ?? "البيانات مش صحيحة";
 
@@ -315,6 +332,7 @@ public class EmployeesController : Controller
         model.JobTitles = new SelectList(await _jobTitleService.GetLookupAsync(), "Id", "Name", model.JobTitleId);
         model.Managers = new SelectList(await _employeeService.GetManagerLookupAsync(model.Id == 0 ? null : model.Id), "Id", "Name", model.ManagerId);
         model.Shifts = new SelectList(await _employeeService.GetShiftLookupAsync(), "Id", "Name", model.ShiftId);
+        model.Positions = await _positionService.GetOptionsAsync();
     }
 
     private static void CopyFrom(SaveEmployeeDto source, SaveEmployeeDto target)

@@ -1,0 +1,34 @@
+﻿@model OrgUnitNode
+@{
+    var canEdit = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
+    var isAdmin = Model.Type == DepartmentType.Administration;
+}
+
+<li>
+    <details open>
+        <summary class="org-unit @(isAdmin ? "org-admin" : "org-section")">
+            <i class="bi @(isAdmin ? "bi-building" : "bi-diagram-3")"></i>
+            <span class="org-unit-type">@Labels.Of(Model.Type)</span>
+            <span class="fw-bold">@Model.Name</span>
+            @if (Model.BranchName is not null) { <span class="org-meta"><i class="bi bi-geo-alt"></i> @Model.BranchName</span> }
+            <span class="org-meta"><i class="bi bi-people"></i> @Model.EmployeesCount</span>
+            @if (canEdit)
+            {
+                <a asp-controller="Positions" asp-action="Create" asp-route-departmentId="@Model.Id" asp-route-returnTo="tree" class="org-add" title="موقع وظيفي في @Model.Name"><i class="bi bi-plus-circle"></i></a>
+            }
+        </summary>
+        @if (Model.Positions.Count > 0 || Model.Children.Count > 0)
+        {
+            <ul>
+                @foreach (var position in Model.Positions)
+                {
+                    <partial name="_Position" model="position" />
+                }
+                @foreach (var child in Model.Children)
+                {
+                    <partial name="_Unit" model="child" />
+                }
+            </ul>
+        }
+    </details>
+</li>

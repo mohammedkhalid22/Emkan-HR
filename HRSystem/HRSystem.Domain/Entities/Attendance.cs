@@ -43,6 +43,37 @@ public class AttendanceRecord : BaseEntity
     public string? Notes { get; set; }
 }
 
+// A fingerprint device on the company network (ZKTeco), read over IP
+public class AttendanceDevice : BaseEntity
+{
+    public string Name { get; set; } = null!;
+    public string IpAddress { get; set; } = null!;
+    public int Port { get; set; } = 4370;
+
+    // The device's "Comm Key" (0 when none is set on the device)
+    public int CommKey { get; set; }
+    public bool IsEnabled { get; set; } = true;
+
+    // True: this server reaches the device directly (same network).
+    // False: the small agent at the company reads it and sends the punches here with ApiKey.
+    public bool PulledByServer { get; set; }
+    public string ApiKey { get; set; } = null!;
+
+    public DateTime? LastSyncAt { get; set; }
+    public bool? LastSyncSucceeded { get; set; }
+    public string? LastSyncMessage { get; set; }
+}
+
+// One raw punch as the device recorded it; turned into the day's check-in / check-out
+public class AttendancePunch
+{
+    public long Id { get; set; }
+    public int DeviceId { get; set; }
+    public string FingerprintId { get; set; } = null!;
+    public DateTime PunchTime { get; set; }
+    public DateTime ReceivedAt { get; set; }
+}
+
 public class AttendanceRequest : BaseEntity
 {
     public int EmployeeId { get; set; }

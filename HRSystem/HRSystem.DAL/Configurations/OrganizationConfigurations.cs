@@ -36,6 +36,20 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
     }
 }
 
+public class PositionConfiguration : IEntityTypeConfiguration<Position>
+{
+    public void Configure(EntityTypeBuilder<Position> builder)
+    {
+        builder.Property(p => p.Name).HasMaxLength(150).IsRequired();
+        builder.HasIndex(p => new { p.DepartmentId, p.Name }).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.ToTable(t => t.HasCheckConstraint("CK_Positions_Capacity", "[Capacity] BETWEEN 1 AND 100"));
+
+        builder.HasOne(p => p.Department).WithMany(d => d.Positions).HasForeignKey(p => p.DepartmentId);
+        builder.HasOne(p => p.JobTitle).WithMany().HasForeignKey(p => p.JobTitleId);
+        builder.HasOne(p => p.ParentPosition).WithMany(p => p.SubPositions).HasForeignKey(p => p.ParentPositionId);
+    }
+}
+
 public class JobTitleConfiguration : IEntityTypeConfiguration<JobTitle>
 {
     public void Configure(EntityTypeBuilder<JobTitle> builder)

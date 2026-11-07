@@ -36,3 +36,42 @@ public enum EmployeeStatus : byte
     Suspended = 2,
     Terminated = 3
 }
+
+// Top of the org tree (إدارة) or a unit under it (قسم)
+public enum DepartmentType : byte
+{
+    Administration = 1,
+    Section = 2
+}
+
+public enum Religion : byte
+{
+    Muslim = 1,
+    Christian = 2,
+    Other = 3
+}
+
+public enum MilitaryStatus : byte
+{
+    Completed = 1,
+    Exempted = 2,
+    Postponed = 3,
+    NotApplicable = 4
+}
+
+public enum FamilyRelation : byte
+{
+    Spouse = 1,
+    Son = 2,
+    Daughter = 3,
+    Father = 4,
+    Mother = 5,
+    Other = 6
+}
+
+public enum QualificationType : byte
+{
+    Degree = 1,
+    Course = 2,
+    Certificate = 3
+}

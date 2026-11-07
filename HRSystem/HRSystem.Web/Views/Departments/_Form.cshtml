@@ -1,4 +1,4 @@
-@model DepartmentFormViewModel
+﻿@model DepartmentFormViewModel
 
 <div class="page-card" style="max-width: 640px">
     <form method="post">
@@ -12,9 +12,16 @@
         </div>
 
         <div class="mb-3">
+            <label asp-for="Type" class="form-label"></label>
+            <select asp-for="Type" asp-items="Labels.Options<DepartmentType>(Labels.Of)" class="form-select"></select>
+            <div class="form-text">الإدارة هي أعلى مستوى، والقسم بيبقى تابع لإدارة (أو لقسم أكبر).</div>
+            <span asp-validation-for="Type" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
             <label asp-for="ParentDepartmentId" class="form-label"></label>
             <select asp-for="ParentDepartmentId" asp-items="Model.ParentDepartments" class="form-select">
-                <option value="">— قسم رئيسي —</option>
+                <option value="">— مستوى أعلى (بدون) —</option>
             </select>
             <span asp-validation-for="ParentDepartmentId" class="text-danger"></span>
         </div>

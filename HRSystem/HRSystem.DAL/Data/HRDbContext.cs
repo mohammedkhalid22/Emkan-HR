@@ -25,11 +25,15 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<JobTitle> JobTitles => Set<JobTitle>();
+    public DbSet<Position> Positions => Set<Position>();
 
     // Employees
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<EmployeeDocument> EmployeeDocuments => Set<EmployeeDocument>();
     public DbSet<EmployeeHistory> EmployeeHistory => Set<EmployeeHistory>();
+    public DbSet<EmployeeFamilyMember> EmployeeFamilyMembers => Set<EmployeeFamilyMember>();
+    public DbSet<EmployeeQualification> EmployeeQualifications => Set<EmployeeQualification>();
+    public DbSet<EmployeeExperience> EmployeeExperiences => Set<EmployeeExperience>();
     public DbSet<CvAnalysis> CvAnalyses => Set<CvAnalysis>();
     public DbSet<Candidate> Candidates => Set<Candidate>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -44,6 +48,8 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<AttendanceRequest> AttendanceRequests => Set<AttendanceRequest>();
+    public DbSet<AttendanceDevice> AttendanceDevices => Set<AttendanceDevice>();
+    public DbSet<AttendancePunch> AttendancePunches => Set<AttendancePunch>();
 
     // Payroll
     public DbSet<SalaryComponent> SalaryComponents => Set<SalaryComponent>();

@@ -41,6 +41,27 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .WithMany(s => s.Employees)
             .HasForeignKey(e => e.ShiftId);
 
+        builder.HasOne(e => e.Position)
+            .WithMany(p => p.Employees)
+            .HasForeignKey(e => e.PositionId);
+
+        builder.Property(e => e.Nationality).HasMaxLength(50);
+        builder.Property(e => e.BloodType).HasMaxLength(5);
+        builder.Property(e => e.InsuranceNumber).HasMaxLength(20);
+        builder.Property(e => e.PassportNumber).HasMaxLength(20);
+        builder.Property(e => e.DrivingLicenseNumber).HasMaxLength(30);
+        builder.Property(e => e.BankName).HasMaxLength(100);
+        builder.Property(e => e.BankBranch).HasMaxLength(100);
+        builder.Property(e => e.Iban).HasMaxLength(34);
+        builder.Property(e => e.Governorate).HasMaxLength(50);
+        builder.Property(e => e.City).HasMaxLength(50);
+        builder.Property(e => e.EmergencyContactName).HasMaxLength(150);
+        builder.Property(e => e.EmergencyContactRelation).HasMaxLength(50);
+        builder.Property(e => e.EmergencyContactPhone).HasMaxLength(20);
+        builder.Property(e => e.FingerprintId).HasMaxLength(20);
+        // One person per number on the device
+        builder.HasIndex(e => e.FingerprintId).IsUnique().HasFilter("[FingerprintId] IS NOT NULL AND [IsDeleted] = 0");
+
         builder.HasOne(e => e.User)
             .WithOne(u => u.Employee)
             .HasForeignKey<Employee>(e => e.UserId);
@@ -80,6 +101,38 @@ public class CvAnalysisConfiguration : IEntityTypeConfiguration<CvAnalysis>
 
         builder.HasOne(a => a.Employee).WithMany().HasForeignKey(a => a.EmployeeId);
         builder.HasOne(a => a.EmployeeDocument).WithMany().HasForeignKey(a => a.EmployeeDocumentId);
+    }
+}
+
+public class EmployeeFamilyMemberConfiguration : IEntityTypeConfiguration<EmployeeFamilyMember>
+{
+    public void Configure(EntityTypeBuilder<EmployeeFamilyMember> builder)
+    {
+        builder.Property(f => f.Name).HasMaxLength(150).IsRequired();
+        builder.Property(f => f.NationalId).HasColumnType("char(14)");
+        builder.HasOne(f => f.Employee).WithMany(e => e.FamilyMembers).HasForeignKey(f => f.EmployeeId);
+    }
+}
+
+public class EmployeeQualificationConfiguration : IEntityTypeConfiguration<EmployeeQualification>
+{
+    public void Configure(EntityTypeBuilder<EmployeeQualification> builder)
+    {
+        builder.Property(q => q.Title).HasMaxLength(150).IsRequired();
+        builder.Property(q => q.Institution).HasMaxLength(150);
+        builder.Property(q => q.Grade).HasMaxLength(50);
+        builder.HasOne(q => q.Employee).WithMany(e => e.Qualifications).HasForeignKey(q => q.EmployeeId);
+    }
+}
+
+public class EmployeeExperienceConfiguration : IEntityTypeConfiguration<EmployeeExperience>
+{
+    public void Configure(EntityTypeBuilder<EmployeeExperience> builder)
+    {
+        builder.Property(x => x.Company).HasMaxLength(150).IsRequired();
+        builder.Property(x => x.JobTitle).HasMaxLength(100);
+        builder.Property(x => x.LeavingReason).HasMaxLength(250);
+        builder.HasOne(x => x.Employee).WithMany(e => e.Experiences).HasForeignKey(x => x.EmployeeId);
     }
 }
 

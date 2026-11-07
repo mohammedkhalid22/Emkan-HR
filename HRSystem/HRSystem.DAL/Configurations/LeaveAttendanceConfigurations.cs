@@ -76,6 +76,30 @@ public class AttendanceRecordConfiguration : IEntityTypeConfiguration<Attendance
     }
 }
 
+public class AttendanceDeviceConfiguration : IEntityTypeConfiguration<AttendanceDevice>
+{
+    public void Configure(EntityTypeBuilder<AttendanceDevice> builder)
+    {
+        builder.Property(d => d.Name).HasMaxLength(100).IsRequired();
+        builder.Property(d => d.IpAddress).HasMaxLength(100).IsRequired();
+        builder.Property(d => d.LastSyncMessage).HasMaxLength(500);
+        builder.Property(d => d.ApiKey).HasMaxLength(64).IsRequired();
+        builder.HasIndex(d => d.Name).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(d => d.ApiKey).IsUnique();
+    }
+}
+
+public class AttendancePunchConfiguration : IEntityTypeConfiguration<AttendancePunch>
+{
+    public void Configure(EntityTypeBuilder<AttendancePunch> builder)
+    {
+        builder.Property(p => p.FingerprintId).HasMaxLength(20).IsRequired();
+        // The device sends its whole log every time; the same punch is kept once
+        builder.HasIndex(p => new { p.FingerprintId, p.PunchTime }).IsUnique();
+        builder.HasIndex(p => p.PunchTime);
+    }
+}
+
 public class AttendanceRequestConfiguration : IEntityTypeConfiguration<AttendanceRequest>
 {
     public void Configure(EntityTypeBuilder<AttendanceRequest> builder)

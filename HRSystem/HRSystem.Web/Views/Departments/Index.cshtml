@@ -1,15 +1,15 @@
-@model List<DepartmentDto>
+﻿@model List<DepartmentDto>
 @{
-    ViewData["Title"] = "الأقسام";
+    ViewData["Title"] = "الإدارات والأقسام";
     var canEdit = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
 }
 
 <div class="page-card">
     <div class="page-toolbar">
-        <span class="text-muted">@Model.Count قسم</span>
+        <span class="text-muted">@Model.Count(d => d.Type == DepartmentType.Administration) إدارة · @Model.Count(d => d.Type == DepartmentType.Section) قسم <a asp-controller="OrgChart" asp-action="Index" class="ms-2"><i class="bi bi-diagram-3"></i> الشجرة</a></span>
         @if (canEdit)
         {
-            <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة قسم</a>
+            <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة إدارة / قسم</a>
         }
     </div>
 
@@ -26,7 +26,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>القسم</th>
+                        <th>الاسم</th><th>النوع</th>
                         <th>تابع لـ</th>
                         <th>الفرع</th>
                         <th>المدير</th>
@@ -38,7 +38,7 @@
                     @foreach (var department in Model)
                     {
                         <tr>
-                            <td class="fw-semibold">@department.Name</td>
+                            <td class="fw-semibold">@department.Name</td><td><span class="badge @(department.Type == DepartmentType.Administration ? "text-bg-primary" : "text-bg-light")">@Labels.Of(department.Type)</span></td>
                             <td>@(department.ParentDepartmentName ?? "—")</td>
                             <td>@(department.BranchName ?? "—")</td>
                             <td>@(department.ManagerName ?? "—")</td>

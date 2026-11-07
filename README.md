@@ -41,3 +41,19 @@ icacls D:\EmkanBackups /grant 'NT Service\MSSQL$MSSQLSERVER_2022:(OI)(CI)M' /gra
 
   وبعدين حط `"Folder": "D:\\EmkanBackups"` في الإعدادات. (`MSSQLSERVER_2022` هو اسم الـ instance. ولو البرنامج شغال على IIS، ادي الصلاحية لحساب الـ App Pool بدل `$env:USERNAME`.)
 - الرجوع لنسخة بيتعمل من SQL Server Management Studio: Databases ← Restore Database.
+
+## ربط جهاز البصمة (ZKTeco)
+
+البرنامج بيقرا أجهزة ZKTeco عن طريق الـ IP (بورت 4370)، من شاشة **أجهزة البصمة**. أول بصمة في اليوم بتبقى الحضور، وآخر بصمة الانصراف، والموظف بيتعرف من **رقم البصمة** اللي في ملفه.
+
+- **البرنامج على سيرفر جوه الشركة:** ضيف الجهاز وعلّم على "السيرفر بيوصل للجهاز مباشرة". هيتقرا كل 10 دقايق، أو بزرار "اقرا دلوقتي".
+- **البرنامج على الإنترنت (الاستضافة):** الموقع مش هيقدر يوصل لجهاز جوه شبكة الشركة. فبتشغّل **برنامج ربط البصمة** (`HRSystem.FingerprintAgent`) على أي كمبيوتر في الشركة:
+  1. اعمل Publish ليه:
+
+```powershell
+dotnet publish HRSystem\HRSystem.FingerprintAgent -c Release -r win-x64 --self-contained -o Publish\FingerprintAgent
+```
+
+  2. افتح `agentsettings.json` وحط عنوان الموقع، والـ IP والـ Comm Key بتاع الجهاز، ومفتاح الربط من شاشة أجهزة البصمة (زرار المفتاح).
+  3. شغّل `EmkanFingerprintAgent.exe` وسيبه مفتوح، أو اعمله Scheduled Task كل 10 دقايق بـ `--once`.
+- كل اللي بيحصل بيتكتب في `agent.log` جنب البرنامج.

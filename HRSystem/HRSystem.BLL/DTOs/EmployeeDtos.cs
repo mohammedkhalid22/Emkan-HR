@@ -58,18 +58,43 @@ public class EmployeeDetailsDto
 
     public string DepartmentName { get; set; } = null!;
     public string JobTitleName { get; set; } = null!;
+    public string? PositionName { get; set; }
     public int? ManagerId { get; set; }
     public string? ManagerName { get; set; }
     public string? ShiftName { get; set; }
+    public string? FingerprintId { get; set; }
 
     public decimal BasicSalary { get; set; }
     public decimal InsuranceSalary { get; set; }
     public string? BankAccount { get; set; }
+    public string? BankName { get; set; }
+    public string? BankBranch { get; set; }
+    public string? Iban { get; set; }
+
+    public string? Nationality { get; set; }
+    public Religion? Religion { get; set; }
+    public MilitaryStatus? MilitaryStatus { get; set; }
+    public string? BloodType { get; set; }
+    public string? InsuranceNumber { get; set; }
+    public DateOnly? InsuranceStartDate { get; set; }
+    public string? PassportNumber { get; set; }
+    public DateOnly? PassportExpiry { get; set; }
+    public string? DrivingLicenseNumber { get; set; }
+    public DateOnly? DrivingLicenseExpiry { get; set; }
+
+    public string? Governorate { get; set; }
+    public string? City { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactRelation { get; set; }
+    public string? EmergencyContactPhone { get; set; }
 
     public string? UserId { get; set; }
 
     public List<EmployeeDocumentDto> Documents { get; set; } = [];
     public List<EmployeeHistoryDto> History { get; set; } = [];
+    public List<FamilyMemberDto> Family { get; set; } = [];
+    public List<QualificationDto> Qualifications { get; set; } = [];
+    public List<ExperienceDto> Experiences { get; set; } = [];
 }
 
 public class EmployeeDocumentDto
@@ -178,6 +203,162 @@ public class SaveEmployeeDto
     [Display(Name = "رقم الحساب البنكي")]
     [StringLength(34, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
     public string? BankAccount { get; set; }
+
+    [Display(Name = "البنك")]
+    [StringLength(100, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? BankName { get; set; }
+
+    [Display(Name = "فرع البنك")]
+    [StringLength(100, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? BankBranch { get; set; }
+
+    [Display(Name = "IBAN")]
+    [RegularExpression(@"^[A-Za-z]{2}\d{2}[A-Za-z0-9]{10,30}$", ErrorMessage = "{0} مش صحيح (زي EG380019000500000000263180002)")]
+    public string? Iban { get; set; }
+
+    // ----- Position and fingerprint -----
+
+    [Display(Name = "الموقع الوظيفي")]
+    public int? PositionId { get; set; }
+
+    [Display(Name = "رقم البصمة")]
+    [RegularExpression(@"^\d{1,9}$", ErrorMessage = "{0} أرقام بس (الرقم اللي الموظف متسجل بيه على الجهاز)")]
+    public string? FingerprintId { get; set; }
+
+    // ----- Official -----
+
+    [Display(Name = "الجنسية")]
+    [StringLength(50, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? Nationality { get; set; }
+
+    [Display(Name = "الديانة")]
+    public Religion? Religion { get; set; }
+
+    [Display(Name = "الموقف من التجنيد")]
+    public MilitaryStatus? MilitaryStatus { get; set; }
+
+    [Display(Name = "فصيلة الدم")]
+    [RegularExpression(@"^(A|B|AB|O)[+-]$", ErrorMessage = "{0} زي A+ أو O-")]
+    public string? BloodType { get; set; }
+
+    [Display(Name = "الرقم التأميني")]
+    [RegularExpression(@"^\d{1,20}$", ErrorMessage = "{0} أرقام بس")]
+    public string? InsuranceNumber { get; set; }
+
+    [Display(Name = "تاريخ الاشتراك في التأمينات")]
+    public DateOnly? InsuranceStartDate { get; set; }
+
+    [Display(Name = "رقم جواز السفر")]
+    [StringLength(20, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? PassportNumber { get; set; }
+
+    [Display(Name = "انتهاء جواز السفر")]
+    public DateOnly? PassportExpiry { get; set; }
+
+    [Display(Name = "رقم رخصة القيادة")]
+    [StringLength(30, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? DrivingLicenseNumber { get; set; }
+
+    [Display(Name = "انتهاء رخصة القيادة")]
+    public DateOnly? DrivingLicenseExpiry { get; set; }
+
+    // ----- Home and emergency -----
+
+    [Display(Name = "المحافظة")]
+    [StringLength(50, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? Governorate { get; set; }
+
+    [Display(Name = "المدينة / الحي")]
+    [StringLength(50, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? City { get; set; }
+
+    [Display(Name = "اسم شخص للطوارئ")]
+    [StringLength(150, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? EmergencyContactName { get; set; }
+
+    [Display(Name = "صلة القرابة")]
+    [StringLength(50, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? EmergencyContactRelation { get; set; }
+
+    [Display(Name = "موبايل الطوارئ")]
+    [RegularExpression(@"^\+?\d{8,15}$", ErrorMessage = "{0} مش صحيح")]
+    public string? EmergencyContactPhone { get; set; }
+}
+
+// ---------- Family, qualifications, experience (lists on the profile) ----------
+
+public class FamilyMemberDto
+{
+    public int Id { get; set; }
+    public int EmployeeId { get; set; }
+
+    [Display(Name = "الاسم")]
+    [Required(ErrorMessage = "{0} مطلوب")]
+    [StringLength(150, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string Name { get; set; } = null!;
+
+    [Display(Name = "صلة القرابة")]
+    [Required(ErrorMessage = "{0} مطلوبة")]
+    public FamilyRelation? Relation { get; set; }
+
+    [Display(Name = "تاريخ الميلاد")]
+    public DateOnly? BirthDate { get; set; }
+
+    [Display(Name = "الرقم القومي")]
+    [RegularExpression(@"^\d{14}$", ErrorMessage = "{0} لازم يكون 14 رقم")]
+    public string? NationalId { get; set; }
+}
+
+public class QualificationDto
+{
+    public int Id { get; set; }
+    public int EmployeeId { get; set; }
+
+    [Display(Name = "النوع")]
+    [Required(ErrorMessage = "{0} مطلوب")]
+    public QualificationType? Type { get; set; }
+
+    [Display(Name = "المؤهل / الدورة")]
+    [Required(ErrorMessage = "{0} مطلوب")]
+    [StringLength(150, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string Title { get; set; } = null!;
+
+    [Display(Name = "الجهة")]
+    [StringLength(150, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string? Institution { get; set; }
+
+    [Display(Name = "السنة")]
+    [Range(1950, 2100, ErrorMessage = "{0} لازم تكون بين {1} و {2}")]
+    public int? Year { get; set; }
+
+    [Display(Name = "التقدير")]
+    [StringLength(50, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? Grade { get; set; }
+}
+
+public class ExperienceDto
+{
+    public int Id { get; set; }
+    public int EmployeeId { get; set; }
+
+    [Display(Name = "الشركة")]
+    [Required(ErrorMessage = "{0} مطلوبة")]
+    [StringLength(150, ErrorMessage = "{0} لازم تكون {1} حرف أو أقل")]
+    public string Company { get; set; } = null!;
+
+    [Display(Name = "المسمى")]
+    [StringLength(100, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? JobTitle { get; set; }
+
+    [Display(Name = "من")]
+    public DateOnly? FromDate { get; set; }
+
+    [Display(Name = "إلى")]
+    public DateOnly? ToDate { get; set; }
+
+    [Display(Name = "سبب الخروج")]
+    [StringLength(250, ErrorMessage = "{0} لازم يكون {1} حرف أو أقل")]
+    public string? LeavingReason { get; set; }
 }
 
 public class TerminateEmployeeDto

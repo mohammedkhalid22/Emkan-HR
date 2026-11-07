@@ -10,6 +10,9 @@ public static class DependencyInjection
         services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IDepartmentService, DepartmentService>();
         services.AddScoped<IJobTitleService, JobTitleService>();
+        services.AddScoped<IPositionService, PositionService>();
+        services.AddScoped<IEmployeeRecordsService, EmployeeRecordsService>();
+        services.AddScoped<IDeviceService, DeviceService>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
         services.AddScoped<ICvAnalysisService, CvAnalysisService>();

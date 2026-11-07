@@ -36,6 +36,7 @@ public class DepartmentService : IDepartmentService
             {
                 Id = d.Id,
                 Name = d.Name,
+                Type = d.Type,
                 ParentDepartmentName = d.ParentDepartment != null ? d.ParentDepartment.Name : null,
                 BranchName = d.Branch != null ? d.Branch.Name : null,
                 ManagerName = d.Manager != null ? d.Manager.FullNameAr : null,
@@ -51,6 +52,7 @@ public class DepartmentService : IDepartmentService
             {
                 Id = d.Id,
                 Name = d.Name,
+                Type = d.Type,
                 ParentDepartmentId = d.ParentDepartmentId,
                 BranchId = d.BranchId,
                 ManagerId = d.ManagerId
@@ -80,6 +82,7 @@ public class DepartmentService : IDepartmentService
         await _departments.AddAsync(new Department
         {
             Name = dto.Name.Trim(),
+            Type = dto.Type!.Value,
             ParentDepartmentId = dto.ParentDepartmentId,
             BranchId = dto.BranchId,
             ManagerId = dto.ManagerId
@@ -99,6 +102,7 @@ public class DepartmentService : IDepartmentService
             return validation;
 
         department.Name = dto.Name.Trim();
+        department.Type = dto.Type!.Value;
         department.ParentDepartmentId = dto.ParentDepartmentId;
         department.BranchId = dto.BranchId;
         department.ManagerId = dto.ManagerId;
@@ -110,7 +114,7 @@ public class DepartmentService : IDepartmentService
     {
         var info = await _departments.QueryNoTracking()
             .Where(d => d.Id == id)
-            .Select(d => new { HasEmployees = d.Employees.Any(), HasChildren = d.SubDepartments.Any() })
+            .Select(d => new { HasEmployees = d.Employees.Any(), HasChildren = d.SubDepartments.Any(), HasPositions = d.Positions.Any() })
             .FirstOrDefaultAsync();
 
         if (info is null)
@@ -119,6 +123,8 @@ public class DepartmentService : IDepartmentService
             return ServiceResult.Failure("مينفعش تمسح قسم فيه موظفين. انقلهم لقسم تاني الأول");
         if (info.HasChildren)
             return ServiceResult.Failure("مينفعش تمسح قسم تحته أقسام فرعية");
+        if (info.HasPositions)
+            return ServiceResult.Failure("مينفعش تمسح قسم فيه مواقع وظيفية. امسحها أو انقلها الأول");
 
         var department = await _departments.GetByIdAsync(id);
         _departments.Remove(department!);
@@ -131,6 +137,10 @@ public class DepartmentService : IDepartmentService
         var name = dto.Name.Trim();
         if (await _departments.QueryNoTracking().AnyAsync(d => d.Name == name && d.Id != dto.Id))
             return ServiceResult.Failure("في قسم تاني بنفس الاسم", nameof(dto.Name));
+
+        // A section (قسم) always sits under an administration or another section
+        if (dto.Type == DepartmentType.Section && dto.ParentDepartmentId is null)
+            return ServiceResult.Failure("القسم لازم يكون تابع لإدارة", nameof(dto.ParentDepartmentId));
 
         if (dto.ParentDepartmentId is int parentId)
         {

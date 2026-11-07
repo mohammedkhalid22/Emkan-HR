@@ -1,4 +1,4 @@
-@model EmployeeProfileViewModel
+﻿@model EmployeeProfileViewModel
 @{
     var e = Model.Employee;
     ViewData["Title"] = e.FullNameAr;
@@ -49,6 +49,12 @@
 <div class="page-card">
     <ul class="nav nav-tabs mb-4" role="tablist" id="profileTabs">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info" type="button">البيانات</button></li>
+        @if (Model.CanSeeSalary)
+        {
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#official" type="button">بيانات رسمية</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#family" type="button">الأسرة والطوارئ <span class="badge text-bg-light">@e.Family.Count</span></button></li>
+        }
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#qualifications" type="button">المؤهلات والخبرات</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button">المستندات <span class="badge text-bg-light">@e.Documents.Count</span></button></li>
         @if (Model.Cv is not null)
         {
@@ -85,6 +91,7 @@
                 <div class="col-md-6 col-xxl-4">
                     <h3 class="h6 fw-bold text-muted mb-3">الوظيفة</h3>
                     <dl class="info-list">
+                        @if (e.PositionName is not null) { <dt>الموقع الوظيفي</dt><dd><a asp-controller="OrgChart" asp-action="Index">@e.PositionName</a></dd> }
                         <dt>القسم</dt><dd>@e.DepartmentName</dd>
                         <dt>المسمى</dt><dd>@e.JobTitleName</dd>
                         <dt>المدير المباشر</dt>
@@ -96,6 +103,7 @@
                             else { <span>@Text(e.ManagerName)</span> }
                         </dd>
                         <dt>الوردية</dt><dd>@Text(e.ShiftName)</dd>
+                        <dt>رقم البصمة</dt><dd class="ltr-value">@Text(e.FingerprintId)</dd>
                         <dt>تاريخ التعيين</dt><dd>@Date(e.HireDate)</dd>
                         <dt>نوع العقد</dt><dd>@Labels.Of(e.ContractType)</dd>
                         <dt>انتهاء العقد</dt><dd>@Date(e.ContractEndDate)</dd>
@@ -108,11 +116,155 @@
                         <dl class="info-list">
                             <dt>المرتب الأساسي</dt><dd>@e.BasicSalary.ToString("N2") جنيه</dd>
                             <dt>أجر الاشتراك التأميني</dt><dd>@e.InsuranceSalary.ToString("N2") جنيه</dd>
+                            <dt>البنك</dt><dd>@Text(e.BankName) @(e.BankBranch is null ? "" : "· " + e.BankBranch)</dd>
                             <dt>الحساب البنكي</dt><dd class="ltr-value">@Text(e.BankAccount)</dd>
+                            <dt>IBAN</dt><dd class="ltr-value">@Text(e.Iban)</dd>
                         </dl>
                     </div>
                 }
             </div>
+        </div>
+
+        @if (Model.CanSeeSalary)
+        {
+            @* ---------- Official ---------- *@
+            <div class="tab-pane fade" id="official">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <dl class="info-list">
+                            <dt>الجنسية</dt><dd>@Text(e.Nationality)</dd>
+                            <dt>الديانة</dt><dd>@(e.Religion is Religion r ? Labels.Of(r) : "—")</dd>
+                            <dt>الموقف من التجنيد</dt><dd>@(e.MilitaryStatus is MilitaryStatus ms ? Labels.Of(ms) : "—")</dd>
+                            <dt>فصيلة الدم</dt><dd class="ltr-value">@Text(e.BloodType)</dd>
+                            <dt>الرقم التأميني</dt><dd class="ltr-value">@Text(e.InsuranceNumber)</dd>
+                            <dt>بداية التأمينات</dt><dd>@Date(e.InsuranceStartDate)</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="info-list">
+                            <dt>جواز السفر</dt><dd class="ltr-value">@Text(e.PassportNumber)</dd>
+                            <dt>انتهاء الجواز</dt><dd>@Date(e.PassportExpiry)</dd>
+                            <dt>رخصة القيادة</dt><dd class="ltr-value">@Text(e.DrivingLicenseNumber)</dd>
+                            <dt>انتهاء الرخصة</dt><dd>@Date(e.DrivingLicenseExpiry)</dd>
+                            <dt>المحافظة</dt><dd>@Text(e.Governorate)</dd>
+                            <dt>المدينة / الحي</dt><dd>@Text(e.City)</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- Family and emergency ---------- *@
+            <div class="tab-pane fade" id="family">
+                <div class="alert alert-light border d-flex flex-wrap gap-3 align-items-center">
+                    <i class="bi bi-telephone-forward fs-5 text-danger"></i>
+                    <div>
+                        <div class="small text-muted">في حالة الطوارئ</div>
+                        @if (e.EmergencyContactName is null) { <span class="text-muted">مش متسجل (من تعديل الموظف ← السكن والطوارئ)</span> }
+                        else { <span class="fw-semibold">@e.EmergencyContactName</span> <span class="text-muted">(@Text(e.EmergencyContactRelation))</span> <span dir="ltr" class="ms-2">@e.EmergencyContactPhone</span> }
+                    </div>
+                </div>
+
+                @if (Model.CanEdit)
+                {
+                    <form asp-controller="EmployeeRecords" asp-action="AddFamily" method="post" class="row g-2 align-items-end mb-3">
+                        <input type="hidden" asp-for="NewFamilyMember.EmployeeId" />
+                        <div class="col-md-3"><label asp-for="NewFamilyMember.Name" class="form-label small"></label><input asp-for="NewFamilyMember.Name" class="form-control" required /></div>
+                        <div class="col-md-2"><label asp-for="NewFamilyMember.Relation" class="form-label small"></label><select asp-for="NewFamilyMember.Relation" asp-items="Labels.Options<FamilyRelation>(Labels.Of)" class="form-select" required><option value="">—</option></select></div>
+                        <div class="col-md-2"><label asp-for="NewFamilyMember.BirthDate" class="form-label small"></label><input asp-for="NewFamilyMember.BirthDate" type="date" class="form-control" /></div>
+                        <div class="col-md-3"><label asp-for="NewFamilyMember.NationalId" class="form-label small"></label><input asp-for="NewFamilyMember.NationalId" class="form-control" dir="ltr" maxlength="14" inputmode="numeric" /></div>
+                        <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> إضافة</button></div>
+                    </form>
+                }
+
+                @if (e.Family.Count == 0)
+                {
+                    <div class="empty-state"><i class="bi bi-people"></i> مفيش أفراد أسرة متسجلين</div>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle">
+                        <thead><tr><th>الاسم</th><th>الصلة</th><th>تاريخ الميلاد</th><th>الرقم القومي</th>@if (Model.CanEdit) { <th></th> }</tr></thead>
+                        <tbody>
+                            @foreach (var f in e.Family)
+                            {
+                                <tr>
+                                    <td>@f.Name</td><td>@Labels.Of(f.Relation!.Value)</td><td>@Date(f.BirthDate)</td><td dir="ltr" class="text-end">@Text(f.NationalId)</td>
+                                    @if (Model.CanEdit) { <td class="text-end"><form asp-controller="EmployeeRecords" asp-action="DeleteFamily" asp-route-id="@f.Id" method="post"><button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button></form></td> }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+
+        @* ---------- Qualifications and experience ---------- *@
+        <div class="tab-pane fade" id="qualifications">
+            <h3 class="h6 fw-bold text-muted mb-3">المؤهلات والدورات</h3>
+            @if (Model.CanEdit)
+            {
+                <form asp-controller="EmployeeRecords" asp-action="AddQualification" method="post" class="row g-2 align-items-end mb-3">
+                    <input type="hidden" asp-for="NewQualification.EmployeeId" />
+                    <div class="col-md-2"><label asp-for="NewQualification.Type" class="form-label small"></label><select asp-for="NewQualification.Type" asp-items="Labels.Options<QualificationType>(Labels.Of)" class="form-select" required><option value="">—</option></select></div>
+                    <div class="col-md-3"><label asp-for="NewQualification.Title" class="form-label small"></label><input asp-for="NewQualification.Title" class="form-control" placeholder="بكالوريوس تجارة" required /></div>
+                    <div class="col-md-3"><label asp-for="NewQualification.Institution" class="form-label small"></label><input asp-for="NewQualification.Institution" class="form-control" placeholder="جامعة القاهرة" /></div>
+                    <div class="col-md-1"><label asp-for="NewQualification.Year" class="form-label small"></label><input asp-for="NewQualification.Year" type="number" min="1950" max="2100" class="form-control" /></div>
+                    <div class="col-md-1"><label asp-for="NewQualification.Grade" class="form-label small"></label><input asp-for="NewQualification.Grade" class="form-control" /></div>
+                    <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> إضافة</button></div>
+                </form>
+            }
+            @if (e.Qualifications.Count == 0)
+            {
+                <div class="text-muted small mb-4">مفيش مؤهلات متسجلة</div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle mb-4">
+                    <thead><tr><th>النوع</th><th>المؤهل / الدورة</th><th>الجهة</th><th>السنة</th><th>التقدير</th>@if (Model.CanEdit) { <th></th> }</tr></thead>
+                    <tbody>
+                        @foreach (var q in e.Qualifications)
+                        {
+                            <tr>
+                                <td><span class="badge text-bg-light">@Labels.Of(q.Type!.Value)</span></td><td class="fw-semibold">@q.Title</td><td>@Text(q.Institution)</td><td>@(q.Year?.ToString() ?? "—")</td><td>@Text(q.Grade)</td>
+                                @if (Model.CanEdit) { <td class="text-end"><form asp-controller="EmployeeRecords" asp-action="DeleteQualification" asp-route-id="@q.Id" method="post"><button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button></form></td> }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <h3 class="h6 fw-bold text-muted mb-3">الخبرات السابقة</h3>
+            @if (Model.CanEdit)
+            {
+                <form asp-controller="EmployeeRecords" asp-action="AddExperience" method="post" class="row g-2 align-items-end mb-3">
+                    <input type="hidden" asp-for="NewExperience.EmployeeId" />
+                    <div class="col-md-3"><label asp-for="NewExperience.Company" class="form-label small"></label><input asp-for="NewExperience.Company" class="form-control" required /></div>
+                    <div class="col-md-2"><label asp-for="NewExperience.JobTitle" class="form-label small"></label><input asp-for="NewExperience.JobTitle" class="form-control" /></div>
+                    <div class="col-md-2"><label asp-for="NewExperience.FromDate" class="form-label small"></label><input asp-for="NewExperience.FromDate" type="date" class="form-control" /></div>
+                    <div class="col-md-2"><label asp-for="NewExperience.ToDate" class="form-label small"></label><input asp-for="NewExperience.ToDate" type="date" class="form-control" /></div>
+                    <div class="col-md-2"><label asp-for="NewExperience.LeavingReason" class="form-label small"></label><input asp-for="NewExperience.LeavingReason" class="form-control" /></div>
+                    <div class="col-md-1"><button type="submit" class="btn btn-primary w-100" title="إضافة"><i class="bi bi-plus-lg"></i></button></div>
+                </form>
+            }
+            @if (e.Experiences.Count == 0)
+            {
+                <div class="text-muted small">مفيش خبرات سابقة متسجلة</div>
+            }
+            else
+            {
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>الشركة</th><th>المسمى</th><th>من</th><th>إلى</th><th>سبب الخروج</th>@if (Model.CanEdit) { <th></th> }</tr></thead>
+                    <tbody>
+                        @foreach (var x in e.Experiences)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@x.Company</td><td>@Text(x.JobTitle)</td><td>@Date(x.FromDate)</td><td>@Date(x.ToDate)</td><td>@Text(x.LeavingReason)</td>
+                                @if (Model.CanEdit) { <td class="text-end"><form asp-controller="EmployeeRecords" asp-action="DeleteExperience" asp-route-id="@x.Id" method="post"><button type="submit" class="btn btn-sm btn-outline-danger" title="حذف"><i class="bi bi-trash"></i></button></form></td> }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
         </div>
 
         @* ---------- Documents ---------- *@

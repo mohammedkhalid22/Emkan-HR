@@ -22,6 +22,110 @@ namespace HRSystem.DAL.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.AttendanceDevice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApiKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("CommKey")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastSyncAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastSyncMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool?>("LastSyncSucceeded")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("PulledByServer")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiKey")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("AttendanceDevices");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.AttendancePunch", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("DeviceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FingerprintId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("PunchTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PunchTime");
+
+                    b.HasIndex("FingerprintId", "PunchTime")
+                        .IsUnique();
+
+                    b.ToTable("AttendancePunches");
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.AttendanceRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -511,6 +615,9 @@ namespace HRSystem.DAL.Migrations
                     b.Property<int?>("ParentDepartmentId")
                         .HasColumnType("int");
 
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -551,12 +658,28 @@ namespace HRSystem.DAL.Migrations
                         .HasMaxLength(34)
                         .HasColumnType("nvarchar(34)");
 
+                    b.Property<string>("BankBranch")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<decimal>("BasicSalary")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateOnly>("BirthDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("BloodType")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -578,9 +701,32 @@ namespace HRSystem.DAL.Migrations
                     b.Property<int>("DepartmentId")
                         .HasColumnType("int");
 
+                    b.Property<DateOnly?>("DrivingLicenseExpiry")
+                        .HasColumnType("date");
+
+                    b.Property<string>("DrivingLicenseNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmergencyContactPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("EmergencyContactRelation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FingerprintId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("FullNameAr")
                         .IsRequired()
@@ -594,12 +740,27 @@ namespace HRSystem.DAL.Migrations
                     b.Property<byte>("Gender")
                         .HasColumnType("tinyint");
 
+                    b.Property<string>("Governorate")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<DateOnly>("HireDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("Iban")
+                        .HasMaxLength(34)
+                        .HasColumnType("nvarchar(34)");
+
+                    b.Property<string>("InsuranceNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("InsuranceSalary")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly?>("InsuranceStartDate")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -613,9 +774,23 @@ namespace HRSystem.DAL.Migrations
                     b.Property<byte?>("MaritalStatus")
                         .HasColumnType("tinyint");
 
+                    b.Property<byte?>("MilitaryStatus")
+                        .HasColumnType("tinyint");
+
                     b.Property<string>("NationalId")
                         .IsRequired()
                         .HasColumnType("char(14)");
+
+                    b.Property<string>("Nationality")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateOnly?>("PassportExpiry")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PassportNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
@@ -624,6 +799,12 @@ namespace HRSystem.DAL.Migrations
                     b.Property<string>("PhotoPath")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("PositionId")
+                        .HasColumnType("int");
+
+                    b.Property<byte?>("Religion")
+                        .HasColumnType("tinyint");
 
                     b.Property<int?>("ShiftId")
                         .HasColumnType("int");
@@ -657,6 +838,10 @@ namespace HRSystem.DAL.Migrations
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL AND [IsDeleted] = 0");
 
+                    b.HasIndex("FingerprintId")
+                        .IsUnique()
+                        .HasFilter("[FingerprintId] IS NOT NULL AND [IsDeleted] = 0");
+
                     b.HasIndex("JobTitleId");
 
                     b.HasIndex("ManagerId");
@@ -664,6 +849,8 @@ namespace HRSystem.DAL.Migrations
                     b.HasIndex("NationalId")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("PositionId");
 
                     b.HasIndex("ShiftId");
 
@@ -727,6 +914,105 @@ namespace HRSystem.DAL.Migrations
                     b.ToTable("EmployeeDocuments");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeExperience", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Company")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("FromDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LeavingReason")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateOnly?>("ToDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeExperiences");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeFamilyMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("char(14)");
+
+                    b.Property<byte>("Relation")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeFamilyMembers");
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -774,6 +1060,58 @@ namespace HRSystem.DAL.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("EmployeeHistory", (string)null);
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeQualification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Grade")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Institution")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeQualifications");
                 });
 
             modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeSalaryComponent", b =>
@@ -1392,6 +1730,62 @@ namespace HRSystem.DAL.Migrations
                     b.ToTable("PayrollRuns");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.Position", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("JobTitleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ParentPositionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobTitleId");
+
+                    b.HasIndex("ParentPositionId");
+
+                    b.HasIndex("DepartmentId", "Name")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Positions", t =>
+                        {
+                            t.HasCheckConstraint("CK_Positions_Capacity", "[Capacity] BETWEEN 1 AND 100");
+                        });
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.PublicHoliday", b =>
                 {
                     b.Property<int>("Id")
@@ -1909,6 +2303,11 @@ namespace HRSystem.DAL.Migrations
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("HRSystem.Domain.Entities.Position", "Position")
+                        .WithMany("Employees")
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HRSystem.Domain.Entities.Shift", "Shift")
                         .WithMany("Employees")
                         .HasForeignKey("ShiftId")
@@ -1924,6 +2323,8 @@ namespace HRSystem.DAL.Migrations
                     b.Navigation("JobTitle");
 
                     b.Navigation("Manager");
+
+                    b.Navigation("Position");
 
                     b.Navigation("Shift");
 
@@ -1941,10 +2342,43 @@ namespace HRSystem.DAL.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeExperience", b =>
+                {
+                    b.HasOne("HRSystem.Domain.Entities.Employee", "Employee")
+                        .WithMany("Experiences")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeFamilyMember", b =>
+                {
+                    b.HasOne("HRSystem.Domain.Entities.Employee", "Employee")
+                        .WithMany("FamilyMembers")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeHistory", b =>
                 {
                     b.HasOne("HRSystem.Domain.Entities.Employee", "Employee")
                         .WithMany("History")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.EmployeeQualification", b =>
+                {
+                    b.HasOne("HRSystem.Domain.Entities.Employee", "Employee")
+                        .WithMany("Qualifications")
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -2050,6 +2484,32 @@ namespace HRSystem.DAL.Migrations
                     b.Navigation("PayrollRun");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.Position", b =>
+                {
+                    b.HasOne("HRSystem.Domain.Entities.Department", "Department")
+                        .WithMany("Positions")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRSystem.Domain.Entities.JobTitle", "JobTitle")
+                        .WithMany()
+                        .HasForeignKey("JobTitleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRSystem.Domain.Entities.Position", "ParentPosition")
+                        .WithMany("SubPositions")
+                        .HasForeignKey("ParentPositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Department");
+
+                    b.Navigation("JobTitle");
+
+                    b.Navigation("ParentPosition");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -2110,6 +2570,8 @@ namespace HRSystem.DAL.Migrations
                 {
                     b.Navigation("Employees");
 
+                    b.Navigation("Positions");
+
                     b.Navigation("SubDepartments");
                 });
 
@@ -2119,11 +2581,17 @@ namespace HRSystem.DAL.Migrations
 
                     b.Navigation("Documents");
 
+                    b.Navigation("Experiences");
+
+                    b.Navigation("FamilyMembers");
+
                     b.Navigation("History");
 
                     b.Navigation("LeaveBalances");
 
                     b.Navigation("LeaveRequests");
+
+                    b.Navigation("Qualifications");
 
                     b.Navigation("Subordinates");
                 });
@@ -2136,6 +2604,13 @@ namespace HRSystem.DAL.Migrations
             modelBuilder.Entity("HRSystem.Domain.Entities.PayrollRun", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.Position", b =>
+                {
+                    b.Navigation("Employees");
+
+                    b.Navigation("SubPositions");
                 });
 
             modelBuilder.Entity("HRSystem.Domain.Entities.Shift", b =>

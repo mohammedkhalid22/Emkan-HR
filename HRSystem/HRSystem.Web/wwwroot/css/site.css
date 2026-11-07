@@ -1192,3 +1192,25 @@ body {
 .setting-switch .form-switch { display: flex; align-items: center; gap: .6rem; padding-inline-start: 0; }
 .setting-switch .form-check-input { float: none; margin: 0; width: 2.4em; height: 1.3em; cursor: pointer; flex-shrink: 0; }
 .setting-switch .small { padding-inline-start: 3em; margin-top: .15rem; }
+
+/* ---------- Org tree ---------- */
+.org-tree ul { list-style: none; margin: 0; padding-inline-start: 26px; border-inline-start: 1px dashed #c3d1e3; }
+.org-tree ul.org-root { padding-inline-start: 0; border: 0; }
+.org-tree li { position: relative; padding: 5px 0; }
+.org-tree ul:not(.org-root) > li::before { content: ""; position: absolute; inset-inline-start: -26px; top: 22px; width: 20px; border-top: 1px dashed #c3d1e3; }
+.org-tree summary { list-style: none; cursor: pointer; }
+.org-tree summary::-webkit-details-marker { display: none; }
+.org-unit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; border: 1px solid #d5deea; }
+.org-unit::before { content: "\25BE"; color: #6a7b8f; font-size: .8rem; }
+details:not([open]) > .org-unit::before { content: "\25C2"; }
+.org-admin { background: #e8f1fc; border-color: #9cc2ee; }
+.org-section { background: #f5f8fc; }
+.org-unit-type { font-size: .72rem; padding: 1px 8px; border-radius: 10px; background: #fff; border: 1px solid #c3d1e3; color: #3c5a7d; }
+.org-meta { font-size: .78rem; color: #6a7b8f; }
+.org-add { color: #6a7b8f; font-size: .95rem; text-decoration: none; }
+.org-add:hover { color: var(--bs-primary); }
+.org-position { display: inline-block; min-width: 260px; max-width: 100%; padding: 7px 12px; border-radius: 8px; border: 1px solid #d5deea; background: #fff; border-inline-start: 3px solid #2a78d6; }
+.org-position.is-vacant { border-inline-start-color: #eda100; background: #fffaf0; }
+.org-position-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.org-holders { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 4px; font-size: .85rem; }
+.org-holder { text-decoration: none; }

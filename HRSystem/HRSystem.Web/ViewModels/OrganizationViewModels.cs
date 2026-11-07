@@ -11,6 +11,20 @@ public class DepartmentFormViewModel : SaveDepartmentDto
     public IEnumerable<SelectListItem> Managers { get; set; } = [];
 }
 
+public class PositionFormViewModel : SavePositionDto
+{
+    public IEnumerable<SelectListItem> Departments { get; set; } = [];
+    public IEnumerable<SelectListItem> JobTitles { get; set; } = [];
+    public IEnumerable<SelectListItem> Parents { get; set; } = [];
+}
+
+public class PositionsIndexViewModel
+{
+    public List<PositionDto> Positions { get; set; } = [];
+    public int? DepartmentId { get; set; }
+    public IEnumerable<SelectListItem> Departments { get; set; } = [];
+}
+
 public class DashboardViewModel
 {
     public string UserName { get; set; } = null!;

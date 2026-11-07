@@ -34,6 +34,30 @@
             $('#Gender').val(parseInt(id[12], 10) % 2 === 1 ? 'Male' : 'Female');
         });
 
+        // A position fills the department and job title, and the manager follows the tree
+        function applyPosition() {
+            const option = $('#PositionId option:selected');
+            const picked = !!option.val();
+            if (picked) {
+                $('#DepartmentId').val(option.data('dept'));
+                $('#JobTitleId').val(option.data('job'));
+            }
+            $('#DepartmentId, #JobTitleId').toggleClass('pe-none bg-light', picked).attr('tabindex', picked ? -1 : null);
+            $('#manager-field').toggleClass('d-none', picked);
+        }
+        $('#PositionId').on('change', applyPosition);
+        applyPosition();
+
+        // Military service only applies to men
+        function applyGender() {
+            const male = $('#Gender').val() === 'Male';
+            $('#MilitaryStatus').prop('disabled', !male);
+            if (!male) $('#MilitaryStatus').val('');
+        }
+        $('#Gender').on('change', applyGender);
+        $('#NationalId').on('input', applyGender);
+        applyGender();
+
         // Insurance salary defaults to the basic salary
         $('#BasicSalary').on('change', function () {
             const insurance = $('#InsuranceSalary');

@@ -38,9 +38,18 @@
                 <a class="sidebar-link @Active("Branches")" asp-controller="Branches" asp-action="Index">
                     <i class="bi bi-building"></i> الفروع
                 </a>
-                <a class="sidebar-link @Active("Departments")" asp-controller="Departments" asp-action="Index">
-                    <i class="bi bi-diagram-3"></i> الأقسام
+                <a class="sidebar-link @Active("OrgChart")" asp-controller="OrgChart" asp-action="Index">
+                    <i class="bi bi-diagram-3-fill"></i> الشجرة التنظيمية
                 </a>
+                <a class="sidebar-link @Active("Departments")" asp-controller="Departments" asp-action="Index">
+                    <i class="bi bi-diagram-3"></i> الإدارات والأقسام
+                </a>
+                @if (isAdminOrHr)
+                {
+                    <a class="sidebar-link @Active("Positions")" asp-controller="Positions" asp-action="Index">
+                        <i class="bi bi-person-badge"></i> المواقع الوظيفية
+                    </a>
+                }
                 <a class="sidebar-link @Active("JobTitles")" asp-controller="JobTitles" asp-action="Index">
                     <i class="bi bi-briefcase"></i> المسميات الوظيفية
                 </a>
@@ -103,8 +112,11 @@
                     <a class="sidebar-link @ActiveAt("Attendance", "Monthly")" asp-controller="Attendance" asp-action="Monthly">
                         <i class="bi bi-table"></i> التقرير الشهري
                     </a>
+                    <a class="sidebar-link @Active("Devices")" asp-controller="Devices" asp-action="Index">
+                        <i class="bi bi-fingerprint"></i> أجهزة البصمة
+                    </a>
                     <a class="sidebar-link @ActiveAt("Attendance", "Import")" asp-controller="Attendance" asp-action="Import">
-                        <i class="bi bi-fingerprint"></i> استيراد البصمة
+                        <i class="bi bi-file-earmark-arrow-up"></i> استيراد ملف بصمة
                     </a>
                     <a class="sidebar-link @Active("Shifts")" asp-controller="Shifts" asp-action="Index">
                         <i class="bi bi-alarm"></i> الورديات

@@ -1,0 +1,64 @@
+﻿@model PositionsIndexViewModel
+@{
+    ViewData["Title"] = "المواقع الوظيفية";
+}
+
+<div class="page-card">
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label class="form-label small text-muted" for="departmentId">الإدارة / القسم</label>
+            <select name="departmentId" id="departmentId" asp-items="Model.Departments" class="form-select" onchange="this.form.submit()">
+                <option value="">الكل</option>
+            </select>
+        </div>
+        <div class="col d-flex gap-2 justify-content-end">
+            <a asp-controller="OrgChart" asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-diagram-3"></i> الشجرة</a>
+            <a asp-action="Create" asp-route-departmentId="@Model.DepartmentId" class="btn btn-primary"><i class="bi bi-plus-lg"></i> موقع جديد</a>
+        </div>
+    </form>
+
+    @if (Model.Positions.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-diagram-3"></i>
+            لسه مفيش مواقع وظيفية. ابدأ بأعلى موقع (زي المدير العام) وبعدين اللي تحته.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th>الموقع</th><th>الإدارة / القسم</th><th>المسمى</th><th>تابع لـ</th><th>الشاغلين</th><th class="text-end">إجراءات</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Positions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@p.Name</td>
+                            <td>@p.DepartmentName</td>
+                            <td class="small">@p.JobTitleName</td>
+                            <td class="small">@(p.ParentPositionName ?? "—")</td>
+                            <td class="small">
+                                @foreach (var h in p.Holders)
+                                {
+                                    <a asp-controller="Employees" asp-action="Details" asp-route-id="@h.Id" class="d-block">@h.Name</a>
+                                }
+                                @if (p.Holders.Count < p.Capacity)
+                                {
+                                    <span class="badge text-bg-warning">@(p.Capacity - p.Holders.Count) شاغر</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Create" asp-route-departmentId="@p.DepartmentId" asp-route-parentId="@p.Id" class="btn btn-sm btn-outline-secondary" title="موقع تابع ليه"><i class="bi bi-diagram-2"></i></a>
+                                <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                        data-delete-url="@Url.Action("Delete", new { id = p.Id })" data-delete-name="@p.Name">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

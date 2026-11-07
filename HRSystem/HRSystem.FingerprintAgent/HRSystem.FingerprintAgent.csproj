@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>EmkanFingerprintAgent</AssemblyName>
+    <RootNamespace>HRSystem.FingerprintAgent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The same protocol code the site uses, compiled in as source (no other project needed) -->
+    <Compile Include="..\HRSystem.BLL\Devices\ZkClient.cs" Link="ZkClient.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="agentsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

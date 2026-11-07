@@ -1,4 +1,4 @@
-@model EmployeeFormViewModel
+﻿@model EmployeeFormViewModel
 
 @* The action is explicit: after "fill from CV" the page is served from another URL *@
 <form method="post" enctype="multipart/form-data" id="employeeForm"
@@ -26,7 +26,17 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-finance" type="button" role="tab">
-                    <i class="bi bi-cash"></i> البيانات المالية
+                    <i class="bi bi-cash"></i> المالية والبنك
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-official" type="button" role="tab">
+                    <i class="bi bi-card-checklist"></i> بيانات رسمية
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-home" type="button" role="tab">
+                    <i class="bi bi-house-heart"></i> السكن والطوارئ
                 </button>
             </li>
         </ul>
@@ -99,6 +109,29 @@
             @* ---------- Job ---------- *@
             <div class="tab-pane fade" id="tab-job" role="tabpanel">
                 <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="PositionId" class="form-label"></label>
+                        <select asp-for="PositionId" class="form-select">
+                            <option value="">— بدون (القسم والمسمى والمدير يدوي) —</option>
+                            @foreach (var group in Model.Positions.GroupBy(p => p.DepartmentName))
+                            {
+                                <optgroup label="@group.Key">
+                                    @foreach (var p in group)
+                                    {
+                                        <option value="@p.Id" data-dept="@p.DepartmentId" data-job="@p.JobTitleId">@p.Name (@p.Holders من @p.Capacity)</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                        <div class="form-text" id="position-note">لما تختار موقع: القسم والمسمى بيتملوا منه، والمدير المباشر بيتحدد لوحده من الشجرة التنظيمية.</div>
+                        <span asp-validation-for="PositionId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="FingerprintId" class="form-label"></label>
+                        <input asp-for="FingerprintId" class="form-control" dir="ltr" inputmode="numeric" />
+                        <div class="form-text">رقم الموظف على جهاز البصمة.</div>
+                        <span asp-validation-for="FingerprintId" class="text-danger"></span>
+                    </div>
                     <div class="col-md-6">
                         <label asp-for="DepartmentId" class="form-label"></label>
                         <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
@@ -113,7 +146,7 @@
                         </select>
                         <span asp-validation-for="JobTitleId" class="text-danger"></span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6" id="manager-field">
                         <label asp-for="ManagerId" class="form-label"></label>
                         <select asp-for="ManagerId" asp-items="Model.Managers" class="form-select">
                             <option value="">— بدون —</option>
@@ -168,10 +201,127 @@
                         <span asp-validation-for="InsuranceSalary" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
+                        <label asp-for="BankName" class="form-label"></label>
+                        <input asp-for="BankName" class="form-control" placeholder="مثلًا: البنك الأهلي المصري" />
+                        <span asp-validation-for="BankName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="BankBranch" class="form-label"></label>
+                        <input asp-for="BankBranch" class="form-control" />
+                        <span asp-validation-for="BankBranch" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
                         <label asp-for="BankAccount" class="form-label"></label>
                         <input asp-for="BankAccount" class="form-control" dir="ltr" />
                         <span asp-validation-for="BankAccount" class="text-danger"></span>
                     </div>
+                    <div class="col-md-8">
+                        <label asp-for="Iban" class="form-label"></label>
+                        <input asp-for="Iban" class="form-control" dir="ltr" placeholder="EG..." />
+                        <span asp-validation-for="Iban" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- Official ---------- *@
+            <div class="tab-pane fade" id="tab-official" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Nationality" class="form-label"></label>
+                        <input asp-for="Nationality" class="form-control" placeholder="مصري" />
+                        <span asp-validation-for="Nationality" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Religion" class="form-label"></label>
+                        <select asp-for="Religion" asp-items="Labels.Options<Religion>(Labels.Of)" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="MilitaryStatus" class="form-label"></label>
+                        <select asp-for="MilitaryStatus" asp-items="Labels.Options<MilitaryStatus>(Labels.Of)" class="form-select">
+                            <option value="">— اختار —</option>
+                        </select>
+                        <div class="form-text">للرجالة بس.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="InsuranceNumber" class="form-label"></label>
+                        <input asp-for="InsuranceNumber" class="form-control" dir="ltr" inputmode="numeric" />
+                        <span asp-validation-for="InsuranceNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="InsuranceStartDate" class="form-label"></label>
+                        <input asp-for="InsuranceStartDate" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="BloodType" class="form-label"></label>
+                        <select asp-for="BloodType" class="form-select" dir="ltr">
+                            <option value="">—</option>
+                            @foreach (var b in new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" })
+                            {
+                                <option value="@b">@b</option>
+                            }
+                        </select>
+                        <span asp-validation-for="BloodType" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="PassportNumber" class="form-label"></label>
+                        <input asp-for="PassportNumber" class="form-control" dir="ltr" />
+                        <span asp-validation-for="PassportNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="PassportExpiry" class="form-label"></label>
+                        <input asp-for="PassportExpiry" type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-4 d-none d-md-block"></div>
+                    <div class="col-md-4">
+                        <label asp-for="DrivingLicenseNumber" class="form-label"></label>
+                        <input asp-for="DrivingLicenseNumber" class="form-control" dir="ltr" />
+                        <span asp-validation-for="DrivingLicenseNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="DrivingLicenseExpiry" class="form-label"></label>
+                        <input asp-for="DrivingLicenseExpiry" type="date" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            @* ---------- Home and emergency ---------- *@
+            <div class="tab-pane fade" id="tab-home" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Governorate" class="form-label"></label>
+                        <input asp-for="Governorate" class="form-control" list="governorates" />
+                        <datalist id="governorates">
+                            @foreach (var g in new[] { "القاهرة", "الجيزة", "الإسكندرية", "القليوبية", "الشرقية", "الدقهلية", "الغربية", "المنوفية", "البحيرة", "كفر الشيخ", "دمياط", "بورسعيد", "الإسماعيلية", "السويس", "الفيوم", "بني سويف", "المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان", "البحر الأحمر", "الوادي الجديد", "مطروح", "شمال سيناء", "جنوب سيناء" })
+                            {
+                                <option value="@g"></option>
+                            }
+                        </datalist>
+                        <span asp-validation-for="Governorate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="City" class="form-label"></label>
+                        <input asp-for="City" class="form-control" />
+                        <span asp-validation-for="City" class="text-danger"></span>
+                    </div>
+                    <div class="col-12"><hr class="my-1" /><div class="fw-semibold small text-muted">في حالة الطوارئ نكلم مين؟</div></div>
+                    <div class="col-md-4">
+                        <label asp-for="EmergencyContactName" class="form-label"></label>
+                        <input asp-for="EmergencyContactName" class="form-control" />
+                        <span asp-validation-for="EmergencyContactName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="EmergencyContactRelation" class="form-label"></label>
+                        <input asp-for="EmergencyContactRelation" class="form-control" placeholder="أخ، زوجة، والد..." />
+                        <span asp-validation-for="EmergencyContactRelation" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="EmergencyContactPhone" class="form-label"></label>
+                        <input asp-for="EmergencyContactPhone" class="form-control" dir="ltr" inputmode="tel" />
+                        <span asp-validation-for="EmergencyContactPhone" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 form-text">الأسرة والمؤهلات والخبرات بتتضاف من ملف الموظف بعد الحفظ.</div>
                 </div>
             </div>
         </div>

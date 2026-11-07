@@ -29,6 +29,7 @@ public class EmployeeFormViewModel : SaveEmployeeDto
     public IEnumerable<SelectListItem> JobTitles { get; set; } = [];
     public IEnumerable<SelectListItem> Managers { get; set; } = [];
     public IEnumerable<SelectListItem> Shifts { get; set; } = [];
+    public List<PositionOptionDto> Positions { get; set; } = [];
 }
 
 public class EmployeeProfileViewModel
@@ -43,6 +44,9 @@ public class EmployeeProfileViewModel
     public UploadDocumentDto NewDocument { get; set; } = new();
     public TerminateEmployeeDto Terminate { get; set; } = new();
     public CreateAccountDto NewAccount { get; set; } = new();
+    public FamilyMemberDto NewFamilyMember { get; set; } = new();
+    public QualificationDto NewQualification { get; set; } = new();
+    public ExperienceDto NewExperience { get; set; } = new();
 
     // Filled for HR only
     public EmployeeSalaryViewModel? Salary { get; set; }

@@ -1,0 +1,13 @@
+﻿{
+  "SiteUrl": "https://hrsystem1.runasp.net",
+  "IntervalMinutes": 10,
+  "Devices": [
+    {
+      "Name": "بصمة المدخل",
+      "Ip": "192.168.1.201",
+      "Port": 4370,
+      "CommKey": 0,
+      "ApiKey": "PASTE_DEVICE_KEY_FROM_THE_SITE"
+    }
+  ]
+}

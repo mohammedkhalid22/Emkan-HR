@@ -1,0 +1,63 @@
+﻿@model PositionFormViewModel
+@{
+    var returnTo = Context.Request.Query["returnTo"].ToString();
+}
+
+<div class="page-card" style="max-width: 680px">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnTo" value="@returnTo" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="مثلًا: محاسب أول، مدير الحسابات" autofocus />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="DepartmentId" class="form-label"></label>
+                <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+                    <option value="">— اختار —</option>
+                </select>
+                <span asp-validation-for="DepartmentId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="JobTitleId" class="form-label"></label>
+                <select asp-for="JobTitleId" asp-items="Model.JobTitles" class="form-select">
+                    <option value="">— اختار —</option>
+                </select>
+                <div class="form-text">منه بيتاخد نطاق المرتب ومتطلبات الوظيفة.</div>
+                <span asp-validation-for="JobTitleId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                <label asp-for="ParentPositionId" class="form-label"></label>
+                <select asp-for="ParentPositionId" asp-items="Model.Parents" class="form-select">
+                    <option value="">— أعلى موقع (مالوش مدير) —</option>
+                </select>
+                <div class="form-text">اللي شاغل الوظيفة الأعلى هو المدير المباشر لشاغلي الموقع ده، والبرنامج بيحدده لوحده.</div>
+                <span asp-validation-for="ParentPositionId" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Capacity" class="form-label"></label>
+                <input asp-for="Capacity" type="number" min="1" max="100" class="form-control" />
+                <div class="form-text">مثلًا 3 محاسبين على نفس الموقع.</div>
+                <span asp-validation-for="Capacity" class="text-danger"></span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        @if (returnTo == "tree")
+        {
+            <a asp-controller="OrgChart" asp-action="Index" class="btn btn-light">إلغاء</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-light">إلغاء</a>
+        }
+    </form>
+</div>

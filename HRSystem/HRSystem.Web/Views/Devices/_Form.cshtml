@@ -1,0 +1,49 @@
+﻿@model HRSystem.BLL.Services.SaveDeviceDto
+
+<div class="page-card" style="max-width: 680px">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="مثلًا: بصمة المدخل الرئيسي" autofocus />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="IpAddress" class="form-label"></label>
+                <input asp-for="IpAddress" class="form-control" dir="ltr" placeholder="192.168.1.201" />
+                <div class="form-text">من قائمة الجهاز: Comm ← Ethernet ← IP Address.</div>
+                <span asp-validation-for="IpAddress" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Port" class="form-label"></label>
+                <input asp-for="Port" type="number" class="form-control" dir="ltr" />
+                <span asp-validation-for="Port" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="CommKey" class="form-label"></label>
+                <input asp-for="CommKey" type="number" class="form-control" dir="ltr" />
+                <div class="form-text">0 لو مش متحط.</div>
+                <span asp-validation-for="CommKey" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-check mb-2">
+            <input asp-for="PulledByServer" class="form-check-input" />
+            <label asp-for="PulledByServer" class="form-check-label"></label>
+        </div>
+        <div class="form-text mb-3">
+            علّم عليها لو البرنامج متركّب على سيرفر جوه شبكة الشركة. لو البرنامج على الإنترنت (زي الاستضافة الحالية)
+            سيبها فاضية، والبرنامج الصغير اللي على كمبيوتر في الشركة هو اللي هيقرا الجهاز ويبعت البصمات.
+        </div>
+        <div class="form-check mb-4">
+            <input asp-for="IsEnabled" class="form-check-input" />
+            <label asp-for="IsEnabled" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> حفظ</button>
+        <a asp-action="Index" class="btn btn-light">إلغاء</a>
+    </form>
+</div>

@@ -40,6 +40,40 @@ public static class Labels
         _ => value.ToString()
     };
 
+    public static string Of(DepartmentType value) => value == DepartmentType.Administration ? "إدارة" : "قسم";
+
+    public static string Of(Religion value) => value switch
+    {
+        Religion.Muslim => "مسلم",
+        Religion.Christian => "مسيحي",
+        _ => "أخرى"
+    };
+
+    public static string Of(MilitaryStatus value) => value switch
+    {
+        MilitaryStatus.Completed => "أدى الخدمة",
+        MilitaryStatus.Exempted => "معفى",
+        MilitaryStatus.Postponed => "مؤجل",
+        _ => "لا ينطبق"
+    };
+
+    public static string Of(FamilyRelation value) => value switch
+    {
+        FamilyRelation.Spouse => "زوج / زوجة",
+        FamilyRelation.Son => "ابن",
+        FamilyRelation.Daughter => "ابنة",
+        FamilyRelation.Father => "أب",
+        FamilyRelation.Mother => "أم",
+        _ => "أخرى"
+    };
+
+    public static string Of(QualificationType value) => value switch
+    {
+        QualificationType.Degree => "مؤهل دراسي",
+        QualificationType.Course => "دورة تدريبية",
+        _ => "شهادة مهنية"
+    };
+
     public static string StatusBadge(EmployeeStatus value) => value switch
     {
         EmployeeStatus.Active => "text-bg-success",

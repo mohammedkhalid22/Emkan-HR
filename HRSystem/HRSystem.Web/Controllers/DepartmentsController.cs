@@ -61,6 +61,7 @@ public class DepartmentsController : Controller
         {
             Id = dto.Id,
             Name = dto.Name,
+            Type = dto.Type,
             ParentDepartmentId = dto.ParentDepartmentId,
             BranchId = dto.BranchId,
             ManagerId = dto.ManagerId

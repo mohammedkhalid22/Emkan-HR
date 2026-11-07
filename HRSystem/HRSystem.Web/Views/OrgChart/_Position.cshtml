@@ -1,0 +1,40 @@
+﻿@model OrgPositionNode
+@{
+    var canEdit = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
+    var vacant = Model.Capacity - Model.Holders.Count;
+}
+
+<li>
+    <div class="org-position @(Model.Holders.Count == 0 ? "is-vacant" : "")">
+        <div class="org-position-head">
+            <i class="bi bi-person-badge"></i>
+            <span class="fw-semibold">@Model.Name</span>
+            <span class="org-meta">@Model.JobTitleName</span>
+            @if (Model.ReportsToElsewhere is not null) { <span class="org-meta"><i class="bi bi-arrow-up-right"></i> تابع لـ @Model.ReportsToElsewhere</span> }
+            @if (canEdit)
+            {
+                <a asp-controller="Positions" asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnTo="tree" class="org-add" title="تعديل"><i class="bi bi-pencil"></i></a>
+                <a asp-controller="Positions" asp-action="Create" asp-route-parentId="@Model.Id" asp-route-returnTo="tree" class="org-add" title="موقع تابع ليه"><i class="bi bi-diagram-2"></i></a>
+            }
+        </div>
+        <div class="org-holders">
+            @foreach (var h in Model.Holders)
+            {
+                <a asp-controller="Employees" asp-action="Details" asp-route-id="@h.Id" class="org-holder"><i class="bi bi-person-fill"></i> @h.Name</a>
+            }
+            @if (vacant > 0)
+            {
+                <span class="badge text-bg-warning">@(vacant == Model.Capacity ? "شاغر" : $"{vacant} شاغر")</span>
+            }
+        </div>
+    </div>
+    @if (Model.Children.Count > 0)
+    {
+        <ul>
+            @foreach (var child in Model.Children)
+            {
+                <partial name="_Position" model="child" />
+            }
+        </ul>
+    }
+</li>

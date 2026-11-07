@@ -1,0 +1,36 @@
+﻿@model List<OrgUnitNode>
+@{
+    ViewData["Title"] = "الهيكل التنظيمي";
+    var canEdit = User.IsInRole(Roles.Admin) || User.IsInRole(Roles.HR);
+}
+
+<div class="page-card">
+    <div class="page-toolbar">
+        <span class="text-muted">إدارة ← قسم ← موقع وظيفي. شاغل الموقع الأعلى هو المدير المباشر للي تحته.</span>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-light" onclick="document.querySelectorAll('.org-tree details').forEach(d => d.open = true)"><i class="bi bi-arrows-expand"></i> فتح الكل</button>
+            <button type="button" class="btn btn-sm btn-light" onclick="document.querySelectorAll('.org-tree details').forEach(d => d.open = false)"><i class="bi bi-arrows-collapse"></i> قفل الكل</button>
+            @if (canEdit)
+            {
+                <a asp-controller="Departments" asp-action="Create" class="btn btn-sm btn-outline-primary"><i class="bi bi-building-add"></i> إدارة / قسم</a>
+                <a asp-controller="Positions" asp-action="Create" asp-route-returnTo="tree" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> موقع وظيفي</a>
+            }
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state"><i class="bi bi-diagram-3"></i> لسه مفيش إدارات</div>
+    }
+    else
+    {
+        <div class="org-tree">
+            <ul class="org-root">
+                @foreach (var unit in Model)
+                {
+                    <partial name="_Unit" model="unit" view-data="ViewData" />
+                }
+            </ul>
+        </div>
+    }
+</div>

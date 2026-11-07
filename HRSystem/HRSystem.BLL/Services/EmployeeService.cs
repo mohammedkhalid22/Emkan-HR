@@ -164,13 +164,39 @@ public class EmployeeService : IEmployeeService
                 TerminationReason = e.TerminationReason,
                 DepartmentName = e.Department.Name,
                 JobTitleName = e.JobTitle.Name,
+                PositionName = e.Position != null ? e.Position.Name : null,
                 ManagerId = e.ManagerId,
                 ManagerName = e.Manager != null ? e.Manager.FullNameAr : null,
                 ShiftName = e.Shift != null ? e.Shift.Name : null,
+                FingerprintId = e.FingerprintId,
                 BasicSalary = e.BasicSalary,
                 InsuranceSalary = e.InsuranceSalary,
                 BankAccount = e.BankAccount,
+                BankName = e.BankName,
+                BankBranch = e.BankBranch,
+                Iban = e.Iban,
+                Nationality = e.Nationality,
+                Religion = e.Religion,
+                MilitaryStatus = e.MilitaryStatus,
+                BloodType = e.BloodType,
+                InsuranceNumber = e.InsuranceNumber,
+                InsuranceStartDate = e.InsuranceStartDate,
+                PassportNumber = e.PassportNumber,
+                PassportExpiry = e.PassportExpiry,
+                DrivingLicenseNumber = e.DrivingLicenseNumber,
+                DrivingLicenseExpiry = e.DrivingLicenseExpiry,
+                Governorate = e.Governorate,
+                City = e.City,
+                EmergencyContactName = e.EmergencyContactName,
+                EmergencyContactRelation = e.EmergencyContactRelation,
+                EmergencyContactPhone = e.EmergencyContactPhone,
                 UserId = e.UserId,
+                Family = e.FamilyMembers.OrderBy(f => f.Relation).ThenBy(f => f.BirthDate)
+                    .Select(f => new FamilyMemberDto { Id = f.Id, EmployeeId = f.EmployeeId, Name = f.Name, Relation = f.Relation, BirthDate = f.BirthDate, NationalId = f.NationalId }).ToList(),
+                Qualifications = e.Qualifications.OrderBy(q => q.Type).ThenByDescending(q => q.Year)
+                    .Select(q => new QualificationDto { Id = q.Id, EmployeeId = q.EmployeeId, Type = q.Type, Title = q.Title, Institution = q.Institution, Year = q.Year, Grade = q.Grade }).ToList(),
+                Experiences = e.Experiences.OrderByDescending(x => x.FromDate)
+                    .Select(x => new ExperienceDto { Id = x.Id, EmployeeId = x.EmployeeId, Company = x.Company, JobTitle = x.JobTitle, FromDate = x.FromDate, ToDate = x.ToDate, LeavingReason = x.LeavingReason }).ToList(),
                 Documents = e.Documents
                     .OrderByDescending(d => d.CreatedAt)
                     .Select(d => new EmployeeDocumentDto
@@ -223,7 +249,27 @@ public class EmployeeService : IEmployeeService
                 ContractEndDate = e.ContractEndDate,
                 BasicSalary = e.BasicSalary,
                 InsuranceSalary = e.InsuranceSalary,
-                BankAccount = e.BankAccount
+                BankAccount = e.BankAccount,
+                BankName = e.BankName,
+                BankBranch = e.BankBranch,
+                Iban = e.Iban,
+                PositionId = e.PositionId,
+                FingerprintId = e.FingerprintId,
+                Nationality = e.Nationality,
+                Religion = e.Religion,
+                MilitaryStatus = e.MilitaryStatus,
+                BloodType = e.BloodType,
+                InsuranceNumber = e.InsuranceNumber,
+                InsuranceStartDate = e.InsuranceStartDate,
+                PassportNumber = e.PassportNumber,
+                PassportExpiry = e.PassportExpiry,
+                DrivingLicenseNumber = e.DrivingLicenseNumber,
+                DrivingLicenseExpiry = e.DrivingLicenseExpiry,
+                Governorate = e.Governorate,
+                City = e.City,
+                EmergencyContactName = e.EmergencyContactName,
+                EmergencyContactRelation = e.EmergencyContactRelation,
+                EmergencyContactPhone = e.EmergencyContactPhone
             })
             .FirstOrDefaultAsync();
 
@@ -288,6 +334,7 @@ public class EmployeeService : IEmployeeService
             await _unitOfWork.SaveChangesAsync();
         }
 
+        await OrgManagers.SyncAsync(_unitOfWork);
         return ServiceResult<int>.Success(employee.Id);
     }
 
@@ -313,6 +360,7 @@ public class EmployeeService : IEmployeeService
         }
 
         await _unitOfWork.SaveChangesAsync();
+        await OrgManagers.SyncAsync(_unitOfWork);
         return ServiceResult.Success();
     }
 
@@ -329,7 +377,7 @@ public class EmployeeService : IEmployeeService
             return ServiceResult.Failure("تاريخ إنهاء الخدمة لازم يكون بعد تاريخ التعيين", nameof(dto.TerminationDate));
 
         var subordinates = await _employees.QueryNoTracking()
-            .CountAsync(e => e.ManagerId == employee.Id && e.Status == EmployeeStatus.Active);
+            .CountAsync(e => e.ManagerId == employee.Id && e.Status == EmployeeStatus.Active && e.PositionId == null);
         if (subordinates > 0)
             return ServiceResult.Failure($"الموظف ده مدير مباشر لـ {subordinates} موظف. غيّر مديرهم الأول");
 
@@ -349,6 +397,8 @@ public class EmployeeService : IEmployeeService
         managedDepartments.ForEach(d => d.ManagerId = null);
 
         await _unitOfWork.SaveChangesAsync();
+        // People under this position now report to the next holder up
+        await OrgManagers.SyncAsync(_unitOfWork);
 
         if (employee.UserId is not null && await _userManager.FindByIdAsync(employee.UserId) is { } user)
         {
@@ -375,7 +425,10 @@ public class EmployeeService : IEmployeeService
         employee.Address = dto.Address?.Trim();
         employee.DepartmentId = dto.DepartmentId!.Value;
         employee.JobTitleId = dto.JobTitleId!.Value;
-        employee.ManagerId = dto.ManagerId;
+        // With a position the manager comes from the tree (OrgManagers), not from the form
+        employee.PositionId = dto.PositionId;
+        if (dto.PositionId is null)
+            employee.ManagerId = dto.ManagerId;
         employee.ShiftId = dto.ShiftId;
         employee.AllowRemoteAttendance = dto.AllowRemoteAttendance;
         employee.HireDate = dto.HireDate!.Value;
@@ -384,7 +437,29 @@ public class EmployeeService : IEmployeeService
         employee.BasicSalary = dto.BasicSalary!.Value;
         employee.InsuranceSalary = dto.InsuranceSalary ?? dto.BasicSalary!.Value;
         employee.BankAccount = dto.BankAccount?.Trim();
+        employee.BankName = Clean(dto.BankName);
+        employee.BankBranch = Clean(dto.BankBranch);
+        employee.Iban = Clean(dto.Iban)?.ToUpperInvariant();
+        employee.FingerprintId = Clean(dto.FingerprintId);
+        employee.Nationality = Clean(dto.Nationality);
+        employee.Religion = dto.Religion;
+        // Military service only applies to men
+        employee.MilitaryStatus = dto.Gender == Domain.Enums.Gender.Male ? dto.MilitaryStatus : null;
+        employee.BloodType = Clean(dto.BloodType)?.ToUpperInvariant();
+        employee.InsuranceNumber = Clean(dto.InsuranceNumber);
+        employee.InsuranceStartDate = dto.InsuranceStartDate;
+        employee.PassportNumber = Clean(dto.PassportNumber);
+        employee.PassportExpiry = dto.PassportExpiry;
+        employee.DrivingLicenseNumber = Clean(dto.DrivingLicenseNumber);
+        employee.DrivingLicenseExpiry = dto.DrivingLicenseExpiry;
+        employee.Governorate = Clean(dto.Governorate);
+        employee.City = Clean(dto.City);
+        employee.EmergencyContactName = Clean(dto.EmergencyContactName);
+        employee.EmergencyContactRelation = Clean(dto.EmergencyContactRelation);
+        employee.EmergencyContactPhone = Clean(dto.EmergencyContactPhone);
     }
+
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     private async Task<string> GenerateCodeAsync()
     {
@@ -404,6 +479,26 @@ public class EmployeeService : IEmployeeService
 
     private async Task<ServiceResult> ValidateAsync(SaveEmployeeDto dto, FileUpload? photo)
     {
+        // A position decides the department and job title (and later the manager)
+        if (dto.PositionId is int positionId)
+        {
+            var position = await _unitOfWork.Repository<Position>().QueryNoTracking()
+                .Where(p => p.Id == positionId)
+                .Select(p => new { p.DepartmentId, p.JobTitleId, p.Capacity, p.Name,
+                    Holders = p.Employees.Count(e => e.Status != EmployeeStatus.Terminated && e.Id != dto.Id) })
+                .FirstOrDefaultAsync();
+            if (position is null)
+                return ServiceResult.Failure("الموقع الوظيفي مش موجود", nameof(dto.PositionId));
+            if (position.Holders >= position.Capacity)
+                return ServiceResult.Failure($"الموقع «{position.Name}» مليان ({position.Capacity} من {position.Capacity}). زوّد العدد المسموح أو اختار موقع تاني", nameof(dto.PositionId));
+            dto.DepartmentId = position.DepartmentId;
+            dto.JobTitleId = position.JobTitleId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.FingerprintId)
+            && await _employees.QueryNoTracking().AnyAsync(e => e.FingerprintId == dto.FingerprintId.Trim() && e.Id != dto.Id))
+            return ServiceResult.Failure("رقم البصمة ده متسجل لموظف تاني", nameof(dto.FingerprintId));
+
         // National ID must be valid and agree with the birth date and gender typed in
         if (!NationalId.TryParse(dto.NationalId, out var idBirthDate, out var idGender))
             return ServiceResult.Failure("الرقم القومي مش صحيح", nameof(dto.NationalId));
@@ -448,7 +543,7 @@ public class EmployeeService : IEmployeeService
             && !await _unitOfWork.Repository<Shift>().QueryNoTracking().AnyAsync(s => s.Id == shiftId))
             return ServiceResult.Failure("الوردية مش موجودة", nameof(dto.ShiftId));
 
-        if (dto.ManagerId is int managerId)
+        if (dto.PositionId is null && dto.ManagerId is int managerId)
         {
             if (managerId == dto.Id)
                 return ServiceResult.Failure("الموظف مينفعش يبقى مدير نفسه", nameof(dto.ManagerId));
@@ -508,7 +603,11 @@ public class EmployeeService : IEmployeeService
         if (employee.BasicSalary != dto.BasicSalary)
             Add("تغيير المرتب", employee.BasicSalary.ToString("N2"), dto.BasicSalary!.Value.ToString("N2"));
 
-        if (employee.ManagerId != dto.ManagerId)
+        if (employee.PositionId != dto.PositionId)
+            Add("تغيير الموقع الوظيفي", await PositionNameAsync(employee.PositionId), await PositionNameAsync(dto.PositionId));
+
+        // With a position the manager change is recorded by OrgManagers
+        if (dto.PositionId is null && employee.ManagerId != dto.ManagerId)
             Add("تغيير المدير", await EmployeeNameAsync(employee.ManagerId), await EmployeeNameAsync(dto.ManagerId));
     }
 
@@ -520,6 +619,9 @@ public class EmployeeService : IEmployeeService
 
     private Task<string?> JobTitleNameAsync(int id)
         => _unitOfWork.Repository<JobTitle>().QueryNoTracking().Where(j => j.Id == id).Select(j => j.Name).FirstOrDefaultAsync();
+
+    private async Task<string?> PositionNameAsync(int? id)
+        => id is null ? "بدون" : await _unitOfWork.Repository<Position>().QueryNoTracking().Where(p => p.Id == id).Select(p => p.Name).FirstOrDefaultAsync();
 
     private async Task<string?> EmployeeNameAsync(int? id)
         => id is null ? "بدون" : await _employees.QueryNoTracking().Where(e => e.Id == id).Select(e => e.FullNameAr).FirstOrDefaultAsync();
