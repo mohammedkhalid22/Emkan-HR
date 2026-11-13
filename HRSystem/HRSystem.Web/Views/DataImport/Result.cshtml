@@ -1,0 +1,37 @@
+﻿@using HRSystem.Web.Services.DataImport
+@model ImportReport
+@{
+    ViewData["Title"] = "نتيجة الاستيراد";
+    var errors = Model.Rows.Where(r => r.Outcome == ImportOutcome.Error).OrderBy(r => r.Sheet).ThenBy(r => r.RowNumber).ToList();
+}
+
+<div class="page-card mb-3">
+    <div class="d-flex flex-wrap gap-4 align-items-center">
+        <div class="kpi-mini"><div class="fs-3 fw-bold text-success">@Model.Count(ImportOutcome.Created)</div><div class="small text-muted">اتضاف جديد</div></div>
+        <div class="kpi-mini"><div class="fs-3 fw-bold text-primary">@Model.Count(ImportOutcome.Updated)</div><div class="small text-muted">اتحدّث</div></div>
+        <div class="kpi-mini"><div class="fs-3 fw-bold text-danger">@errors.Count</div><div class="small text-muted">اترفض</div></div>
+        <div class="kpi-mini"><div class="fs-3 fw-bold text-secondary">@Model.Count(ImportOutcome.Skipped)</div><div class="small text-muted">ماكانش متختار</div></div>
+        <div class="ms-auto d-flex gap-2">
+            <a asp-controller="OrgChart" asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-diagram-3"></i> الشجرة</a>
+            <a asp-controller="Employees" asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-people"></i> الموظفين</a>
+            <a asp-action="Index" class="btn btn-primary">رجوع للاستيراد</a>
+        </div>
+    </div>
+    <p class="small text-muted mt-3 mb-0">لو فيه غلط، تقدر تعمل <strong>تراجع</strong> للاستيراد ده كله من صفحة الاستيراد.</p>
+</div>
+
+@if (errors.Count > 0)
+{
+    <div class="page-card">
+        <h2 class="h6 fw-bold mb-3 text-danger">الصفوف اللي اترفضت</h2>
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>الشيت</th><th>صف</th><th>السجل</th><th>السبب</th></tr></thead>
+            <tbody>
+                @foreach (var r in errors)
+                {
+                    <tr><td>@(ImportSheets.Find(r.Sheet)?.Name)</td><td>@r.RowNumber</td><td>@r.Label</td><td class="text-danger small">@r.Message</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

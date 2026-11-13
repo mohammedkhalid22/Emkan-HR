@@ -1,0 +1,103 @@
+﻿@using HRSystem.Web.Services.DataImport
+@model HRSystem.Web.Controllers.DataImportPreviewModel
+@{
+    ViewData["Title"] = "معاينة الاستيراد";
+    var report = Model.Report;
+    var sheets = ImportSheets.All.Where(s => Model.File.Sheets.ContainsKey(s.Key)).ToList();
+    (string Text, string Badge) Status(ImportOutcome o) => o switch
+    {
+        ImportOutcome.Created => ("جديد", "text-bg-success"),
+        ImportOutcome.Updated => ("هيتحدّث", "text-bg-primary"),
+        ImportOutcome.Error => ("مرفوض", "text-bg-danger"),
+        _ => ("متساب", "text-bg-secondary")
+    };
+}
+
+<form asp-action="Apply" method="post" id="importForm">
+    <input type="hidden" name="token" value="@Model.Token" />
+    <input type="hidden" name="fileName" value="@Model.FileName" />
+
+    <div class="page-card mb-3">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+            <div class="flex-grow-1">
+                <div class="fw-bold" dir="ltr" style="text-align: right">@Model.FileName</div>
+                <div class="small text-muted">
+                    @report.Count(ImportOutcome.Created) جديد · @report.Count(ImportOutcome.Updated) هيتحدّث ·
+                    <span class="text-danger">@report.Count(ImportOutcome.Error) مرفوض</span>
+                    — مفيش حاجة اتحفظت لسه. شيل العلامة من أي صف مش عايزه.
+                </div>
+            </div>
+            <a asp-action="Index" class="btn btn-light">إلغاء</a>
+            <button type="submit" class="btn btn-primary" data-busy="بنحفظ..."><i class="bi bi-check2-all"></i> احفظ المتختار (<span id="selectedCount">0</span>)</button>
+        </div>
+        @foreach (var w in report.Warnings)
+        {
+            <div class="alert alert-warning small py-2 mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i> @w</div>
+        }
+    </div>
+
+    <div class="page-card">
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            @for (var i = 0; i < sheets.Count; i++)
+            {
+                var rows = report.Of(sheets[i].Key).ToList();
+                var errors = rows.Count(r => r.Outcome == ImportOutcome.Error);
+                <li class="nav-item">
+                    <button class="nav-link @(i == 0 ? "active" : "")" data-bs-toggle="tab" data-bs-target="#sheet-@sheets[i].Key" type="button">
+                        @sheets[i].Name <span class="badge text-bg-light">@rows.Count</span>
+                        @if (errors > 0) { <span class="badge text-bg-danger">@errors</span> }
+                    </button>
+                </li>
+            }
+        </ul>
+        <div class="tab-content">
+            @for (var i = 0; i < sheets.Count; i++)
+            {
+                var sheet = sheets[i];
+                var rows = report.Of(sheet.Key).OrderBy(r => r.RowNumber).ToList();
+                <div class="tab-pane fade @(i == 0 ? "show active" : "")" id="sheet-@sheet.Key">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 36px"><input type="checkbox" class="form-check-input sheet-all" checked title="الكل" /></th>
+                                    <th style="width: 60px">صف</th><th>السجل</th><th style="width: 90px">الحالة</th><th>ملاحظة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in rows)
+                                {
+                                    var (text, badge) = Status(r.Outcome);
+                                    var ok = r.Outcome is ImportOutcome.Created or ImportOutcome.Updated;
+                                    <tr class="@(ok ? "" : "table-light")">
+                                        <td><input type="checkbox" class="form-check-input row-pick" name="rows" value="@sheet.Key:@r.RowNumber" checked="@ok" disabled="@(!ok)" /></td>
+                                        <td class="text-muted small">@r.RowNumber</td>
+                                        <td>@r.Label</td>
+                                        <td><span class="badge @badge">@text</span></td>
+                                        <td class="small @(r.Outcome == ImportOutcome.Error ? "text-danger" : "text-muted")">@(ok ? "" : r.Message)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+        <p class="small text-muted mt-3 mb-0">
+            المرفوض صلّحه في الملف وارفعه تاني. لو شلت صف بيعتمد عليه صف تاني (زي قسم فيه موظفين)، الصف التاني هيترفض وقت الحفظ.
+        </p>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        const form = document.getElementById('importForm');
+        function count() { document.getElementById('selectedCount').textContent = form.querySelectorAll('.row-pick:checked').length; }
+        form.querySelectorAll('.sheet-all').forEach(all => all.addEventListener('change', function () {
+            this.closest('table').querySelectorAll('.row-pick:not(:disabled)').forEach(c => c.checked = this.checked);
+            count();
+        }));
+        form.addEventListener('change', e => { if (e.target.classList.contains('row-pick')) count(); });
+        count();
+    </script>
+}

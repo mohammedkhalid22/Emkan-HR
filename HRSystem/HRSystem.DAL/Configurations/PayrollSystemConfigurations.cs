@@ -80,6 +80,24 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
     }
 }
 
+public class ImportBatchConfiguration : IEntityTypeConfiguration<ImportBatch>
+{
+    public void Configure(EntityTypeBuilder<ImportBatch> builder)
+    {
+        builder.Property(b => b.FileName).HasMaxLength(200).IsRequired();
+        builder.Property(b => b.Summary).HasMaxLength(500).IsRequired();
+    }
+}
+
+public class ImportBatchItemConfiguration : IEntityTypeConfiguration<ImportBatchItem>
+{
+    public void Configure(EntityTypeBuilder<ImportBatchItem> builder)
+    {
+        builder.Property(i => i.EntityName).HasMaxLength(50).IsRequired();
+        builder.HasOne(i => i.ImportBatch).WithMany(b => b.Items).HasForeignKey(i => i.ImportBatchId);
+    }
+}
+
 public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> builder)

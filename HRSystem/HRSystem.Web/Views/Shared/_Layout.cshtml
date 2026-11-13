@@ -152,6 +152,9 @@
                     <a class="sidebar-link @Active("Reports")" asp-controller="Reports" asp-action="Index">
                         <i class="bi bi-bar-chart"></i> التقارير
                     </a>
+                    <a class="sidebar-link @Active("DataImport")" asp-controller="DataImport" asp-action="Index">
+                        <i class="bi bi-file-earmark-arrow-up"></i> استيراد البيانات
+                    </a>
                 }
                 @if (User.IsInRole(Roles.Admin))
                 {

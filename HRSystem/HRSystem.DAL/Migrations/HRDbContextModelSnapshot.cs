@@ -1158,6 +1158,76 @@ namespace HRSystem.DAL.Migrations
                     b.ToTable("EmployeeSalaryComponents");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.ImportBatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UndoneAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ImportBatches");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.ImportBatchItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Created")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ImportBatchId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportBatchId");
+
+                    b.ToTable("ImportBatchItems");
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.JobTitle", b =>
                 {
                     b.Property<int>("Id")
@@ -2405,6 +2475,17 @@ namespace HRSystem.DAL.Migrations
                     b.Navigation("SalaryComponent");
                 });
 
+            modelBuilder.Entity("HRSystem.Domain.Entities.ImportBatchItem", b =>
+                {
+                    b.HasOne("HRSystem.Domain.Entities.ImportBatch", "ImportBatch")
+                        .WithMany("Items")
+                        .HasForeignKey("ImportBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ImportBatch");
+                });
+
             modelBuilder.Entity("HRSystem.Domain.Entities.LeaveBalance", b =>
                 {
                     b.HasOne("HRSystem.Domain.Entities.Employee", "Employee")
@@ -2594,6 +2675,11 @@ namespace HRSystem.DAL.Migrations
                     b.Navigation("Qualifications");
 
                     b.Navigation("Subordinates");
+                });
+
+            modelBuilder.Entity("HRSystem.Domain.Entities.ImportBatch", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("HRSystem.Domain.Entities.JobTitle", b =>

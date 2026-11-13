@@ -63,6 +63,8 @@ public class HRDbContext : IdentityDbContext<ApplicationUser>
     // System
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
+    public DbSet<ImportBatchItem> ImportBatchItems => Set<ImportBatchItem>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

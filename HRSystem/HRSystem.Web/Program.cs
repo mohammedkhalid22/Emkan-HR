@@ -34,6 +34,7 @@ builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddHostedService<AttendanceCloseJob>();
 builder.Services.AddHostedService<ReminderJob>();
 builder.Services.AddHostedService<DeviceSyncJob>();
+builder.Services.AddScoped<HRSystem.Web.Services.DataImport.DataImporter>();
 
 // Daily database backup (settings under "Backup"); needs a server that allows BACKUP DATABASE
 builder.Services.Configure<BackupOptions>(builder.Configuration.GetSection(BackupOptions.Section));
