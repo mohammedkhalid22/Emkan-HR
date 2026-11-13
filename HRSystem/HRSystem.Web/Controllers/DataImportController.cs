@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using HRSystem.BLL.Common;
 using HRSystem.Domain.Identity;
 using HRSystem.Web.Extensions;
@@ -7,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HRSystem.Web.Controllers;
 
-// Basic data from one Excel workbook: template → upload → preview and pick rows → save → undo
+// Basic data from Excel: the template, or any workbook mapped by the AI → preview and pick rows → save → undo
 [Authorize(Roles = Roles.AdminOrHR)]
 public class DataImportController : Controller
 {
@@ -16,11 +18,13 @@ public class DataImportController : Controller
 
     private readonly DataImporter _importer;
     private readonly IFileStorage _files;
+    private readonly IAiClient _ai;
 
-    public DataImportController(DataImporter importer, IFileStorage files)
+    public DataImportController(DataImporter importer, IFileStorage files, IAiClient ai)
     {
         _importer = importer;
         _files = files;
+        _ai = ai;
     }
 
     public async Task<IActionResult> Index() => View(await _importer.HistoryAsync());
@@ -39,24 +43,55 @@ public class DataImportController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // Kept until saving, so the preview and the save read the very same file
+        // Kept until saving, so every step reads the very same file
         var token = await _files.SaveAsync(file.ToFileUpload()!, Folder);
-        var parsed = ReadFile(token);
+        var parsed = Read(token, ImportWorkbook.Read);
         if (parsed is null)
         {
             TempData["Error"] = "الملف مش مقروء. اتأكد إنه Excel سليم";
             return RedirectToAction(nameof(Index));
         }
 
-        var report = await _importer.RunAsync(parsed, file.FileName, selected: null, apply: false);
-        return View("Preview", new DataImportPreviewModel(token, file.FileName, parsed, report));
+        // The template (sheets and required columns as we wrote them): straight to the preview
+        if (parsed.Sheets.Count > 0 && !parsed.Warnings.Any(w => w.Contains("ناقصة")))
+            return await PreviewAsync(token, null, file.FileName, parsed);
+
+        // Any other workbook: guess which sheet and column is which, then let the AI improve it
+        var raw = Read(token, ImportMapper.ReadRaw);
+        if (raw is null || raw.Count == 0)
+        {
+            _files.Delete(token);
+            TempData["Error"] = "مش لاقي في الملف جداول فيها عناوين أعمدة";
+            return RedirectToAction(nameof(Index));
+        }
+        var mapping = await ImportMapper.AskAiAsync(raw, ImportMapper.Guess(raw), _ai, HttpContext.RequestAborted);
+        return View("Mapping", new DataImportMappingModel(token, file.FileName, raw, mapping));
+    }
+
+    // The reviewed mapping: turn the workbook into import rows and preview them
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Map(MappingForm form)
+    {
+        var raw = form.Token.StartsWith(Folder + "/") ? Read(form.Token, ImportMapper.ReadRaw) : null;
+        if (raw is null)
+        {
+            TempData["Error"] = "الملف مش موجود. ارفعه تاني";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var mapping = form.ToMapping();
+        var json = JsonSerializer.SerializeToUtf8Bytes(mapping);
+        var mapToken = await _files.SaveAsync(new FileUpload(new MemoryStream(json), "mapping.json", json.Length), Folder);
+        var parsed = ImportMapper.Convert(raw, mapping, await _importer.ReferencesAsync());
+        return await PreviewAsync(form.Token, mapToken, form.FileName, parsed);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Apply(string token, string fileName, List<string> rows)
+    public async Task<IActionResult> Apply(string token, string? mapToken, string fileName, List<string> rows)
     {
-        var parsed = token.StartsWith(Folder + "/") ? ReadFile(token) : null;
+        var parsed = await LoadAsync(token, mapToken);
         if (parsed is null)
         {
             TempData["Error"] = "الملف مش موجود. ارفعه تاني";
@@ -70,6 +105,8 @@ public class DataImportController : Controller
 
         var report = await _importer.RunAsync(parsed, fileName, rows.ToHashSet(), apply: true);
         _files.Delete(token);
+        if (mapToken is not null)
+            _files.Delete(mapToken);
         return View("Result", report);
     }
 
@@ -84,18 +121,89 @@ public class DataImportController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private ImportFile? ReadFile(string token)
+    private async Task<IActionResult> PreviewAsync(string token, string? mapToken, string fileName, ImportFile parsed)
+    {
+        var report = await _importer.RunAsync(parsed, fileName, selected: null, apply: false);
+        return View("Preview", new DataImportPreviewModel(token, mapToken, fileName, parsed, report));
+    }
+
+    // The import rows again, from the template or from the workbook and its saved mapping
+    private async Task<ImportFile?> LoadAsync(string token, string? mapToken)
+    {
+        if (!token.StartsWith(Folder + "/"))
+            return null;
+        if (mapToken is null)
+            return Read(token, ImportWorkbook.Read);
+        if (!mapToken.StartsWith(Folder + "/"))
+            return null;
+
+        var raw = Read(token, ImportMapper.ReadRaw);
+        var mapping = Read(mapToken, s => JsonSerializer.Deserialize<ImportMapping>(s));
+        return raw is null || mapping is null ? null : ImportMapper.Convert(raw, mapping, await _importer.ReferencesAsync());
+    }
+
+    private T? Read<T>(string token, Func<Stream, T> read) where T : class
     {
         try
         {
             using var stream = _files.Open(token);
-            return stream is null ? null : ImportWorkbook.Read(stream);
+            return stream is null ? null : read(stream);
         }
-        catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or ArgumentException)
+        catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or ArgumentException or JsonException)
         {
             return null;
         }
     }
 }
 
-public record DataImportPreviewModel(string Token, string FileName, ImportFile File, ImportReport Report);
+public record DataImportPreviewModel(string Token, string? MapToken, string FileName, ImportFile File, ImportReport Report);
+
+public record DataImportMappingModel(string Token, string FileName, List<RawSheet> Raw, ImportMapping Mapping);
+
+// The mapping screen as posted
+public class MappingForm
+{
+    public string Token { get; set; } = "";
+    public string FileName { get; set; } = "";
+    public bool CreateMissing { get; set; }
+    public List<SheetForm> Sheets { get; set; } = [];
+
+    public class SheetForm
+    {
+        public string Source { get; set; } = "";
+        public string? Target { get; set; }
+        public List<ColumnForm> Columns { get; set; } = [];
+        public List<ValueForm> Values { get; set; } = [];
+    }
+
+    public class ColumnForm
+    {
+        public string Header { get; set; } = "";
+        public string? Target { get; set; }
+    }
+
+    public class ValueForm
+    {
+        public string Column { get; set; } = "";
+        public string Source { get; set; } = "";
+        public string? Target { get; set; }
+    }
+
+    public ImportMapping ToMapping() => new()
+    {
+        CreateMissing = CreateMissing,
+        Sheets = Sheets.Select(s =>
+        {
+            var target = string.IsNullOrEmpty(s.Target) ? null : ImportSheets.Find(s.Target);
+            var map = new SheetMapping { Source = s.Source, Target = target?.Key };
+            if (target is null)
+                return map;
+            foreach (var c in s.Columns.Where(c => !string.IsNullOrEmpty(c.Target) && target.Columns.Any(t => t.Key == c.Target)))
+                if (!map.Columns.ContainsValue(c.Target!))
+                    map.Columns[c.Header] = c.Target!;
+            foreach (var v in s.Values.Where(v => !string.IsNullOrEmpty(v.Target)))
+                (map.Values.TryGetValue(v.Column, out var d) ? d : map.Values[v.Column] = [])[v.Source] = v.Target!;
+            return map;
+        }).ToList()
+    };
+}

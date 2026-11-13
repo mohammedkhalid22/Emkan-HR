@@ -15,7 +15,8 @@
     <div class="col-lg-6">
         <div class="page-card h-100">
             <h2 class="h6 fw-bold mb-2"><span class="badge text-bg-primary me-1">2</span> ارفع الملف</h2>
-            <p class="small text-muted">مفيش حاجة بتتحفظ دلوقتي: هتشوف معاينة لكل شيت، وتختار الصفوف اللي تتحفظ.</p>
+            <p class="small text-muted">القالب، أو <strong>أي ملف Excel عندك</strong> بأعمدته وأسمائه: الذكاء الاصطناعي بيربط كل شيت وعمود بمكانه في البرنامج وإنت بتراجع.
+                مفيش حاجة بتتحفظ قبل ما تشوف المعاينة وتختار الصفوف.</p>
             <form asp-action="Upload" method="post" enctype="multipart/form-data" class="d-flex gap-2" data-busy="بنراجع الملف...">
                 <input type="file" name="file" accept=".xlsx" class="form-control" required />
                 <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-upload"></i> رفع ومعاينة</button>

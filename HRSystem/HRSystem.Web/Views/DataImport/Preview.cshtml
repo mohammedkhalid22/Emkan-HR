@@ -16,6 +16,7 @@
 <form asp-action="Apply" method="post" id="importForm">
     <input type="hidden" name="token" value="@Model.Token" />
     <input type="hidden" name="fileName" value="@Model.FileName" />
+    <input type="hidden" name="mapToken" value="@Model.MapToken" />
 
     <div class="page-card mb-3">
         <div class="d-flex flex-wrap gap-3 align-items-center">
@@ -71,7 +72,7 @@
                                     var ok = r.Outcome is ImportOutcome.Created or ImportOutcome.Updated;
                                     <tr class="@(ok ? "" : "table-light")">
                                         <td><input type="checkbox" class="form-check-input row-pick" name="rows" value="@sheet.Key:@r.RowNumber" checked="@ok" disabled="@(!ok)" /></td>
-                                        <td class="text-muted small">@r.RowNumber</td>
+                                        <td class="text-muted small">@(r.RowNumber >= 9_000_000 ? "تلقائي" : (r.RowNumber % 100000).ToString())</td>
                                         <td>@r.Label</td>
                                         <td><span class="badge @badge">@text</span></td>
                                         <td class="small @(r.Outcome == ImportOutcome.Error ? "text-danger" : "text-muted")">@(ok ? "" : r.Message)</td>

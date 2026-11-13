@@ -161,7 +161,7 @@ public static class ImportWorkbook
     }
 
     // Excel keeps dates and times as numbers; give them the text forms the importer parses
-    private static string CellText(IXLCell cell) => cell.DataType switch
+    internal static string CellText(IXLCell cell) => cell.DataType switch
     {
         XLDataType.DateTime => cell.GetDateTime() is var d && d.TimeOfDay == TimeSpan.Zero
             ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
@@ -176,5 +176,5 @@ public static class ImportWorkbook
 
     private static bool Same(string a, string b) => Normalize(a) == Normalize(b);
 
-    private static string Normalize(string s) => s.Replace("*", "").Replace("ـ", "").Trim();
+    internal static string Normalize(string s) => s.Replace("*", "").Replace("ـ", "").Trim();
 }
