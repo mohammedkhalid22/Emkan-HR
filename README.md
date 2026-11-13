@@ -82,4 +82,4 @@ dotnet test HRSystem/HRSystem.sln
 ## Author
 
 **Mohammed Khalid** — Back-End .NET Developer
-[LinkedIn](https://www.linkedin.com/in/mohammed-khaled-a46856208/) · [GitHub](https://github.com/mohammedkhalid22)
+[LinkedIn](https://www.linkedin.com/in/mohammed-khalid-dotnet/) · [GitHub](https://github.com/mohammedkhalid22)
