@@ -217,7 +217,28 @@ public class DataImporter
         {
             // Rows that point at another row of the same sheet (a section under its administration,
             // a position under its parent, an employee under their manager) wait until that one is in
-            var pending = rows.ToList();
+            // The same record written twice in the file: the first one counts
+            var pending = new List<ImportRow>();
+            var firstRow = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in rows)
+            {
+                var key = sheet.Key switch
+                {
+                    "employees" => new string((row.Get("nationalid") ?? "").Where(char.IsDigit).ToArray()),
+                    "positions" => $"{row.Get("name")}|{row.Get("department")}",
+                    "holidays" => row.Get("date") ?? "",
+                    _ => row.Get("name") ?? ""
+                };
+                if (key.Trim('|').Length > 0 && firstRow.TryGetValue(key, out var first))
+                    report.Rows.Add(new ImportRowResult(sheet.Key, row.RowNumber, Label(sheet, row), ImportOutcome.Error,
+                        $"متكرر في الملف (زي صف {first % 100000})"));
+                else
+                {
+                    if (key.Trim('|').Length > 0)
+                        firstRow[key] = row.RowNumber;
+                    pending.Add(row);
+                }
+            }
             var postponed = new Dictionary<int, string>();
             while (pending.Count > 0)
             {

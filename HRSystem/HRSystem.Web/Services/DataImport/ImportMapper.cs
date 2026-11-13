@@ -109,7 +109,10 @@ public static class ImportMapper
         ["employees.salary"] = ["المرتب", "الراتب", "المرتب الأساسي", "الراتب الأساسي", "الأساسي", "basic salary", "salary", "basic"],
         ["employees.department"] = ["القسم", "الإدارة", "الادارة", "department", "dept"],
         ["employees.jobtitle"] = ["الوظيفة", "المسمى", "المسمى الوظيفي", "job title", "title", "position", "job"],
-        ["employees.contract"] = ["نوع العقد", "العقد", "contract", "contract type"],
+        ["employees.contract"] = ["نوع العقد", "العقد", "نوع التعاقد", "التعاقد", "contract", "contract type", "employment type"],
+        ["employees.contractend"] = ["نهاية العقد", "تاريخ انتهاء العقد", "انتهاء العقد", "contract end", "end date"],
+        ["employees.marital"] = ["الحالة الاجتماعية", "marital status"],
+        ["employees.religion"] = ["الديانة", "الدين", "religion"],
         ["employees.bankaccount"] = ["رقم الحساب", "الحساب البنكي", "account", "bank account"],
         ["employees.fingerprint"] = ["رقم البصمة", "كود البصمة", "fingerprint", "enroll id", "user id"],
         ["employees.insuranceno"] = ["الرقم التأميني", "رقم التأمين", "insurance no", "insurance number"],
@@ -200,7 +203,7 @@ public static class ImportMapper
 
     // ---------- The AI's guess ----------
 
-    public static async Task<ImportMapping> AskAiAsync(List<RawSheet> raw, ImportMapping guess, IAiClient ai, CancellationToken cancellationToken = default)
+    public static async Task<ImportMapping> AskAiAsync(List<RawSheet> raw, ImportMapping guess, IAiClient ai, ILogger logger, CancellationToken cancellationToken = default)
     {
         if (!ai.IsConfigured)
         {
@@ -218,11 +221,15 @@ public static class ImportMapper
         try
         {
             using var doc = JsonDocument.Parse(reply.Value!);
+            // Models sometimes wrap the answer in a list
+            var root = doc.RootElement.ValueKind == JsonValueKind.Array
+                ? doc.RootElement.EnumerateArray().First(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("sheets", out _))
+                : doc.RootElement;
             var mapping = new ImportMapping { CreateMissing = guess.CreateMissing };
             foreach (var sheet in raw)
             {
                 var map = new SheetMapping { Source = sheet.Name };
-                var answer = doc.RootElement.GetProperty("sheets").EnumerateArray()
+                var answer = root.GetProperty("sheets").EnumerateArray()
                     .FirstOrDefault(s => s.TryGetProperty("source", out var src) && src.GetString() == sheet.Name);
                 if (answer.ValueKind == JsonValueKind.Object
                     && answer.TryGetProperty("target", out var t) && t.ValueKind == JsonValueKind.String
@@ -257,8 +264,9 @@ public static class ImportMapper
             mapping.AiNote = "الذكاء الاصطناعي ربط الأعمدة. راجعها قبل ما تكمّل";
             return mapping;
         }
-        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
+        catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or ArgumentException)
         {
+            logger.LogWarning(ex, "AI mapping reply not usable: {Reply}", reply.Value is { Length: > 2000 } r ? r[..2000] : reply.Value);
             guess.AiNote = "رد الذكاء الاصطناعي مش مفهوم، فالربط ده من أسماء الأعمدة بس";
             return guess;
         }

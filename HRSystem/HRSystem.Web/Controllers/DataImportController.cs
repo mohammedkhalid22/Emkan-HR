@@ -19,12 +19,16 @@ public class DataImportController : Controller
     private readonly DataImporter _importer;
     private readonly IFileStorage _files;
     private readonly IAiClient _ai;
+    private readonly IWebHostEnvironment _environment;
+    private readonly ILogger<DataImportController> _logger;
 
-    public DataImportController(DataImporter importer, IFileStorage files, IAiClient ai)
+    public DataImportController(DataImporter importer, IFileStorage files, IAiClient ai, IWebHostEnvironment environment, ILogger<DataImportController> logger)
     {
         _importer = importer;
         _files = files;
         _ai = ai;
+        _environment = environment;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index() => View(await _importer.HistoryAsync());
@@ -43,6 +47,8 @@ public class DataImportController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        RemoveAbandoned();
+
         // Kept until saving, so every step reads the very same file
         var token = await _files.SaveAsync(file.ToFileUpload()!, Folder);
         var parsed = Read(token, ImportWorkbook.Read);
@@ -52,19 +58,21 @@ public class DataImportController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // The template (sheets and required columns as we wrote them): straight to the preview
-        if (parsed.Sheets.Count > 0 && !parsed.Warnings.Any(w => w.Contains("ناقصة")))
+        // The template: every sheet with data is one of ours, with its required columns. Straight to the preview.
+        // (A client file that merely has a sheet called "الفروع" is not the template.)
+        var raw = Read(token, ImportMapper.ReadRaw);
+        if (parsed.Sheets.Count > 0 && !parsed.Warnings.Any(w => w.Contains("ناقصة"))
+            && raw is not null && raw.All(s => ImportSheets.All.Any(t => t.Name.Trim() == s.Name.Trim())))
             return await PreviewAsync(token, null, file.FileName, parsed);
 
         // Any other workbook: guess which sheet and column is which, then let the AI improve it
-        var raw = Read(token, ImportMapper.ReadRaw);
         if (raw is null || raw.Count == 0)
         {
             _files.Delete(token);
             TempData["Error"] = "مش لاقي في الملف جداول فيها عناوين أعمدة";
             return RedirectToAction(nameof(Index));
         }
-        var mapping = await ImportMapper.AskAiAsync(raw, ImportMapper.Guess(raw), _ai, HttpContext.RequestAborted);
+        var mapping = await ImportMapper.AskAiAsync(raw, ImportMapper.Guess(raw), _ai, _logger, HttpContext.RequestAborted);
         return View("Mapping", new DataImportMappingModel(token, file.FileName, raw, mapping));
     }
 
@@ -140,6 +148,18 @@ public class DataImportController : Controller
         var raw = Read(token, ImportMapper.ReadRaw);
         var mapping = Read(mapToken, s => JsonSerializer.Deserialize<ImportMapping>(s));
         return raw is null || mapping is null ? null : ImportMapper.Convert(raw, mapping, await _importer.ReferencesAsync());
+    }
+
+    // Files uploaded but never saved (the preview was left) go after a day
+    private void RemoveAbandoned()
+    {
+        var folder = Path.Combine(_environment.ContentRootPath, "App_Data", "uploads", Folder.Replace('/', Path.DirectorySeparatorChar));
+        if (!Directory.Exists(folder))
+            return;
+        foreach (var old in new DirectoryInfo(folder).GetFiles().Where(f => f.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1)))
+        {
+            try { old.Delete(); } catch (IOException) { /* next time */ }
+        }
     }
 
     private T? Read<T>(string token, Func<Stream, T> read) where T : class
