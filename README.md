@@ -1,59 +1,85 @@
-﻿# إمكان HR | Emkan HR
+# Emkan HR — HR, Attendance & Payroll System
 
-كل إمكانيات فريقك في مكان واحد. برنامج موارد بشرية بـ ASP.NET Core MVC (.NET 9) و SQL Server.
+A complete Human Resources system built with **ASP.NET Core MVC (.NET 9)** and **SQL Server**: employees, attendance with fingerprint devices, leaves, loans, payroll and payslips, recruitment with AI CV screening, an employee self-service portal and a mobile-friendly PWA. The interface is in Arabic (RTL).
 
-## الفولدرات
+> العربي: [README.ar.md](README.ar.md)
 
-| الفولدر | فيه إيه | على Git؟ |
-|---|---|---|
-| `HRSystem/` | الكود كله: الـ Solution والمشاريع الخمسة (Domain, DAL, BLL, Web, Tests) | ✅ |
-| `Docs/` | التوثيق: `HRSystem-Documentation.pdf`، و`HRSystem-Phases.pdf`، و`دليل التجربة.pdf` | ✅ |
-| `Deploy/` | سكريبتات النشر: `Copy-DataToHost` بينقل البيانات من جهازك لداتا بيز الاستضافة | ✅ |
-| `TestData/` | بيانات للتجربة: `CVs/` فيها CVs وهمية ومتطلبات وظيفة مدير مالي | ✅ |
-| `Publish/Hosting/` | كل حاجة للاستضافة (MonsterASP): آخر تحديث `Update-*.zip`، وملفات الموقع الحالية `Current-Site-Files`، ومفتاح الـ AI، وخطوات الرفع | ❌ |
-| `Publish/ToTester/` | الحزمة اللي بتتبعت للتستر يشغّلها على جهازه (البرنامج، طريقة التشغيل، الداتا التجريبية، الدليل، الحسابات) | ❌ |
+![Dashboard](Docs/screenshots/02-dashboard.jpg)
 
-`Publish/` مستبعد من Git لأنه فيه ملفات كبيرة وإعدادات سرية (Connection String ومفتاح الـ AI).
+## Features
 
-## التشغيل على الجهاز
+| Area | What it does |
+|---|---|
+| **Organization** | Branches, departments, job titles and positions, interactive org chart |
+| **Employees** | Full employee file with tabs, documents and attachments, employment records |
+| **Attendance** | Shifts, public holidays, work calendar, attendance requests, location-based check-in with selfie (mobile) |
+| **Fingerprint devices** | Reads ZKTeco devices directly over TCP (port 4370), plus an on-premise agent for cloud-hosted installs |
+| **Leaves** | Leave types, yearly balances, requests and approvals |
+| **Payroll** | Salary components, tax brackets, loans and adjustments, monthly payroll run, PDF payslips |
+| **Recruitment** | Candidates pipeline with **AI CV screening** (match % and reasons against the job requirements) |
+| **Ask the system** | Ask HR questions in plain language and get answers from the data (AI) |
+| **Self-service portal** | Employees see their attendance, leaves, loans and payslips, and submit requests |
+| **Statistics & reports** | Workforce, attendance, leave and payroll charts; Excel and PDF exports |
+| **Notifications** | In-app bell, daily reminders, optional email |
+| **Security** | Role-based access (Admin, HR, Manager, Employee), two-factor sign-in, password reset, full audit log |
+| **Operations** | Scheduled database backups with download, background jobs, installable PWA |
 
-1. افتح `HRSystem/HRSystem.sln` في Visual Studio 2022.
-2. الداتا بيز بتتعمل لوحدها أول ما البرنامج يشتغل (`.\MSSQLSERVER_2022` → `HRSystemDb`).
-3. مفتاح Gemini للذكاء الاصطناعي في `HRSystem/HRSystem.Web/appsettings.Local.json` (مستبعد من Git).
-4. شغّل بـ F5.
+## Architecture
 
-## النشر على الاستضافة
+![Architecture](Docs/screenshots/20-architecture.png)
 
-اعمل Publish (Portable)، وارفع الـ zip جوه `wwwroot` على MonsterASP، واعمله Unzip. الخطوات بالتفصيل في `Publish/Hosting/خطوات الرفع على الاستضافة.txt`.
-
-## النسخ الاحتياطي
-
-البرنامج بياخد نسخة كاملة من الداتا بيز كل يوم بعد الساعة 2 بالليل، ويحتفظ بآخر 14 نسخة. تقدر تشوف الحالة وتاخد نسخة في أي وقت من **النسخ الاحتياطي** في القائمة (للأدمن بس). الإعدادات في `appsettings.json` في قسم `Backup`.
-
-- ده بيشتغل على جهاز أو سيرفر خاص بيكم. **الاستضافة المشتركة (MonsterASP) مش بتسمح بيه**، وهناك النسخة بتتاخد من لوحة تحكم الاستضافة.
-- لو سبت `Folder` فاضي، النسخ بتتحفظ في الفولدر الافتراضي بتاع SQL Server. ده شغال، بس البرنامج مش هيقدر ينزّل الملفات ولا يمسح القديم منها.
-- الأحسن تعمل فولدر للنسخ (ويا ريت على هارد تاني) وتديله صلاحية من PowerShell كـ Administrator:
-
-```powershell
-New-Item -ItemType Directory -Force D:\EmkanBackups
-icacls D:\EmkanBackups /grant 'NT Service\MSSQL$MSSQLSERVER_2022:(OI)(CI)M' /grant "$env:USERNAME:(OI)(CI)M"
+```
+HRSystem.sln
+├── HRSystem.Domain            Entities, enums, constants (no dependencies)
+├── HRSystem.DAL               EF Core DbContext, configurations, migrations, Repository + Unit of Work
+├── HRSystem.BLL               Business services, DTOs, validation, payroll and attendance rules
+├── HRSystem.Web               ASP.NET Core MVC: controllers, views, Identity, hosted services
+├── HRSystem.FingerprintAgent  Small console app that reads ZKTeco devices on the company network and pushes punches to the site
+└── HRSystem.Tests             xUnit tests for the business logic
 ```
 
-  وبعدين حط `"Folder": "D:\\EmkanBackups"` في الإعدادات. (`MSSQLSERVER_2022` هو اسم الـ instance. ولو البرنامج شغال على IIS، ادي الصلاحية لحساب الـ App Pool بدل `$env:USERNAME`.)
-- الرجوع لنسخة بيتعمل من SQL Server Management Studio: Databases ← Restore Database.
+- **N-Layer architecture** with Repository and Unit of Work over Entity Framework Core.
+- **ASP.NET Core Identity** with roles and two-factor authentication.
+- **Hosted services** for device sync, daily attendance closing, reminders and database backups.
+- **ZKTeco protocol implemented directly** in C# (no vendor SDK or COM components).
+- **AI** through the Google Gemini REST API behind an `IAiClient` interface, so the provider can be swapped.
+- **QuestPDF** for payslips and reports, **ClosedXML** for Excel exports.
 
-## ربط جهاز البصمة (ZKTeco)
+## Tech stack
 
-البرنامج بيقرا أجهزة ZKTeco عن طريق الـ IP (بورت 4370)، من شاشة **أجهزة البصمة**. أول بصمة في اليوم بتبقى الحضور، وآخر بصمة الانصراف، والموظف بيتعرف من **رقم البصمة** اللي في ملفه.
+C# · ASP.NET Core MVC 9 · Entity Framework Core · SQL Server · ASP.NET Core Identity · Hosted Services · QuestPDF · ClosedXML · xUnit · jQuery · Bootstrap (RTL) · PWA
 
-- **البرنامج على سيرفر جوه الشركة:** ضيف الجهاز وعلّم على "السيرفر بيوصل للجهاز مباشرة". هيتقرا كل 10 دقايق، أو بزرار "اقرا دلوقتي".
-- **البرنامج على الإنترنت (الاستضافة):** الموقع مش هيقدر يوصل لجهاز جوه شبكة الشركة. فبتشغّل **برنامج ربط البصمة** (`HRSystem.FingerprintAgent`) على أي كمبيوتر في الشركة:
-  1. اعمل Publish ليه:
+## Screenshots
 
-```powershell
-dotnet publish HRSystem\HRSystem.FingerprintAgent -c Release -r win-x64 --self-contained -o Publish\FingerprintAgent
+| | |
+|---|---|
+| ![Employees](Docs/screenshots/04-employees.jpg) | ![Employee details](Docs/screenshots/05-employee-details.jpg) |
+| ![Attendance](Docs/screenshots/08-attendance.jpg) | ![Payroll](Docs/screenshots/09-payroll.jpg) |
+| ![Candidates](Docs/screenshots/06-candidates.jpg) | ![Ask the system](Docs/screenshots/11-ask.jpg) |
+| ![Statistics](Docs/screenshots/10-statistics.jpg) | ![Mobile portal](Docs/screenshots/19-mobile-portal.jpg) |
+
+## Run locally
+
+Requirements: .NET 9 SDK, SQL Server (any edition), Visual Studio 2022 or later.
+
+1. Clone the repository and open `HRSystem/HRSystem.sln`.
+2. Set your SQL Server in `HRSystem/HRSystem.Web/appsettings.json` → `ConnectionStrings:DefaultConnection`.
+3. Run the `HRSystem.Web` project. The database is created and seeded on first run.
+4. Sign in with the development admin account from `appsettings.Development.json`.
+
+AI features are optional. To enable them, create `HRSystem/HRSystem.Web/appsettings.Local.json` (ignored by Git):
+
+```json
+{ "Ai": { "ApiKey": "YOUR_GEMINI_API_KEY" } }
 ```
 
-  2. افتح `agentsettings.json` وحط عنوان الموقع، والـ IP والـ Comm Key بتاع الجهاز، ومفتاح الربط من شاشة أجهزة البصمة (زرار المفتاح).
-  3. شغّل `EmkanFingerprintAgent.exe` وسيبه مفتوح، أو اعمله Scheduled Task كل 10 دقايق بـ `--once`.
-- كل اللي بيحصل بيتكتب في `agent.log` جنب البرنامج.
+Run the tests:
+
+```bash
+dotnet test HRSystem/HRSystem.sln
+```
+
+## Author
+
+**Mohammed Khalid** — Back-End .NET Developer
+[LinkedIn](https://www.linkedin.com/in/mohammed-khaled-a46856208/) · [GitHub](https://github.com/mohammedkhalid22)
